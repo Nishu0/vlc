@@ -14,26 +14,37 @@
 #import <CoreText/CoreText.h>
 #import <vlc_configuration.h>
 
-static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompleted";
+static NSString *const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompleted";
 
 @interface VLCOnboardingSurface : NSView
 @property (copy) void (^appearanceChanged)(void);
 @end
 
 @implementation VLCOnboardingSurface
-- (BOOL)mouseDownCanMoveWindow { return YES; }
+
+- (BOOL)mouseDownCanMoveWindow
+{
+    return YES;
+}
+
 - (void)viewDidChangeEffectiveAppearance
 {
     [super viewDidChangeEffectiveAppearance];
     if (self.appearanceChanged)
         self.appearanceChanged();
 }
+
 @end
 
 @interface VLCOnboardingWindow : NSWindow
 @end
 @implementation VLCOnboardingWindow
-- (void)cancelOperation:(id)sender { [self performClose:sender]; }
+
+- (void)cancelOperation:(id)sender
+{
+    [self performClose:sender];
+}
+
 @end
 
 /* These are native controls with the geometry and colors of the design. */
@@ -43,26 +54,29 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 @end
 
 @implementation VLCOnboardingButton
+
 - (void)drawRect:(NSRect)dirtyRect
 {
     NSColor *background = self.primary ? VLCRedesignAppearance.accentColor : VLCRedesignAppearance.panelColor;
     [(self.highlighted ? [background colorWithAlphaComponent:.75] : background) setFill];
     [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:6 yRadius:6] fill];
     NSDictionary *attributes = @{
-        NSFontAttributeName: [VLCRedesignAppearance fontOfSize:16 weight:self.titleWeight],
-        NSForegroundColorAttributeName: self.primary ? [VLCRedesignAppearance colorWithRGB:0x161616] :
-                                                       VLCRedesignAppearance.subduedColor
+        NSFontAttributeName : [VLCRedesignAppearance fontOfSize:16 weight:self.titleWeight],
+        NSForegroundColorAttributeName : self.primary ? [VLCRedesignAppearance colorWithRGB:0x161616]
+                                                      : VLCRedesignAppearance.subduedColor
     };
     NSAttributedString *title = [[NSAttributedString alloc] initWithString:self.title attributes:attributes];
     VLCDrawAlignedText(title, self.bounds, self.flipped, NSTextAlignmentCenter);
     if (self.window.firstResponder == self) {
         [VLCRedesignAppearance.accentColor setStroke];
         NSBezierPath *ring = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(self.bounds, 1, 1)
-                                                          xRadius:6 yRadius:6];
+                                                             xRadius:6
+                                                             yRadius:6];
         ring.lineWidth = 2;
         [ring stroke];
     }
 }
+
 @end
 
 @interface VLCOnboardingThemeButton : NSButton
@@ -71,6 +85,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 @end
 
 @implementation VLCOnboardingThemeButton
+
 - (void)drawRect:(NSRect)dirtyRect
 {
     NSRect tile = NSMakeRect(8, 8, 100, 100);
@@ -92,18 +107,18 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     }
     if (self.selectedTheme || self.window.firstResponder == self) {
         [VLCRedesignAppearance.accentColor setStroke];
-        NSBezierPath *ring = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(tile, -8, -8)
-                                                          xRadius:19 yRadius:19];
+        NSBezierPath *ring = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(tile, -8, -8) xRadius:19 yRadius:19];
         ring.lineWidth = 4;
         [ring stroke];
     }
     NSDictionary *attributes = @{
-        NSFontAttributeName: [VLCRedesignAppearance fontOfSize:16 weight:NSFontWeightLight],
-        NSForegroundColorAttributeName: VLCRedesignAppearance.subduedColor
+        NSFontAttributeName : [VLCRedesignAppearance fontOfSize:16 weight:NSFontWeightLight],
+        NSForegroundColorAttributeName : VLCRedesignAppearance.subduedColor
     };
     NSAttributedString *title = [[NSAttributedString alloc] initWithString:self.title attributes:attributes];
     VLCDrawAlignedText(title, NSMakeRect(0, 138, NSWidth(self.bounds), 20), self.flipped, NSTextAlignmentCenter);
 }
+
 @end
 
 @interface VLCOnboardingAccentButton : NSButton
@@ -111,6 +126,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 @end
 
 @implementation VLCOnboardingAccentButton
+
 - (void)drawRect:(NSRect)dirtyRect
 {
     [self.image drawInRect:self.bounds];
@@ -121,6 +137,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         [ring stroke];
     }
 }
+
 @end
 
 @interface VLCOnboardingWindowController ()
@@ -142,9 +159,10 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 {
     NSWindow *window = [[VLCOnboardingWindow alloc]
         initWithContentRect:NSMakeRect(0, 0, 1090, 759)
-                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
-                            NSWindowStyleMaskResizable | NSWindowStyleMaskFullSizeContentView
-                    backing:NSBackingStoreBuffered defer:NO];
+                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable |
+                            NSWindowStyleMaskFullSizeContentView
+                    backing:NSBackingStoreBuffered
+                      defer:NO];
     self = [super initWithWindow:window];
     if (self) {
         window.title = _NS("Welcome to VLC");
@@ -167,17 +185,23 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         window.contentView = _surface;
         NSString *movies = NSSearchPathForDirectoriesInDomains(NSMoviesDirectory, NSUserDomainMask, YES).firstObject;
         BOOL isDirectory = NO;
-        _folderPath = movies && [NSFileManager.defaultManager fileExistsAtPath:movies isDirectory:&isDirectory] &&
-                      isDirectory ? [movies stringByAbbreviatingWithTildeInPath] : @"";
+        _folderPath =
+            movies && [NSFileManager.defaultManager fileExistsAtPath:movies isDirectory:&isDirectory] && isDirectory
+                ? [movies stringByAbbreviatingWithTildeInPath]
+                : @"";
 
         __weak typeof(self) weakSelf = self;
         _surface.appearanceChanged = ^{
             if ([VLCRedesignAppearance.theme isEqualToString:@"system"]) {
-                dispatch_async(dispatch_get_main_queue(), ^{ [weakSelf buildStep]; });
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [weakSelf buildStep];
+                });
             }
         };
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(appearanceChanged:)
-                                                  name:VLCRedesignAppearanceChanged object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(appearanceChanged:)
+                                                   name:VLCRedesignAppearanceChanged
+                                                 object:nil];
         [self buildStep];
     }
     return self;
@@ -210,7 +234,8 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 {
     NSStackView *stack = [NSStackView stackViewWithViews:views];
     stack.translatesAutoresizingMaskIntoConstraints = NO;
-    stack.orientation = vertical ? NSUserInterfaceLayoutOrientationVertical : NSUserInterfaceLayoutOrientationHorizontal;
+    stack.orientation =
+        vertical ? NSUserInterfaceLayoutOrientationVertical : NSUserInterfaceLayoutOrientationHorizontal;
     stack.alignment = vertical ? NSLayoutAttributeCenterX : NSLayoutAttributeCenterY;
     stack.spacing = spacing;
     return stack;
@@ -276,7 +301,8 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     self.surface.layer.backgroundColor = VLCRedesignAppearance.backgroundColor.CGColor;
 
     VLCOnboardingButton *next = [self button:self.step == 2 ? _NS("Finish") : _NS("Next")
-                                      primary:YES action:@selector(next:)];
+                                     primary:YES
+                                      action:@selector(next:)];
     next.keyEquivalent = @"\r";
     [self.surface addSubview:next];
     [NSLayoutConstraint activateConstraints:@[
@@ -306,19 +332,31 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 - (void)buildWelcome
 {
     NSImageView *cone = [self image:@"VLC-redesign-cone"];
-    NSTextField *title = [self label:_NS("Welcome to VLC!") size:32 weight:NSFontWeightLight
-                             color:VLCRedesignAppearance.foregroundColor];
+    NSTextField *title = [self label:_NS("Welcome to VLC!")
+                                size:32
+                              weight:NSFontWeightLight
+                               color:VLCRedesignAppearance.foregroundColor];
     title.alignment = NSTextAlignmentCenter;
-    NSTextField *description = [self label:_NS("VLC is a free and open source cross-platform multimedia player and framework that plays most multimedia files as well as DVDs, Audio CDs, VCDs, and various streaming protocols.")
-                                       size:16 weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor];
+    NSTextField *description =
+        [self label:_NS("VLC is a free and open source cross-platform multimedia player and framework that plays most "
+                        "multimedia files as well as DVDs, Audio CDs, VCDs, and various streaming protocols.")
+               size:16
+             weight:NSFontWeightLight
+              color:VLCRedesignAppearance.subduedColor];
     NSMutableParagraphStyle *paragraph = [[NSMutableParagraphStyle alloc] init];
     paragraph.minimumLineHeight = paragraph.maximumLineHeight = 28;
-    description.attributedStringValue = [[NSAttributedString alloc] initWithString:description.stringValue
-        attributes:@{NSFontAttributeName:description.font, NSForegroundColorAttributeName:description.textColor,
-                     NSParagraphStyleAttributeName:paragraph}];
+    description.attributedStringValue =
+        [[NSAttributedString alloc] initWithString:description.stringValue
+                                        attributes:@{
+                                            NSFontAttributeName : description.font,
+                                            NSForegroundColorAttributeName : description.textColor,
+                                            NSParagraphStyleAttributeName : paragraph
+                                        }];
 
     NSTextField *caption = [self label:_NS("Choose a Media Folder to get started with")
-                                  size:14 weight:NSFontWeightRegular color:VLCRedesignAppearance.subduedColor];
+                                  size:14
+                                weight:NSFontWeightRegular
+                                 color:VLCRedesignAppearance.subduedColor];
     self.folderField = [[NSTextField alloc] init];
     self.folderField.cell = [[VLCRedesignAlignedTextFieldCell alloc] initTextCell:@""];
     self.folderField.editable = YES;
@@ -344,8 +382,8 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     [fieldContainer addSubview:self.folderField];
     VLCOnboardingButton *browse = [self button:_NS("Browse") primary:NO action:@selector(browse:)];
     browse.titleWeight = NSFontWeightRegular;
-    NSStackView *row = [self stack:@[fieldContainer, browse] vertical:NO spacing:10];
-    NSStackView *folder = [self stack:@[caption, row] vertical:YES spacing:16];
+    NSStackView *row = [self stack:@[ fieldContainer, browse ] vertical:NO spacing:10];
+    NSStackView *folder = [self stack:@[ caption, row ] vertical:YES spacing:16];
     folder.alignment = NSLayoutAttributeLeading;
     [NSLayoutConstraint activateConstraints:@[
         [fieldContainer.heightAnchor constraintEqualToConstant:36],
@@ -353,13 +391,14 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         [self.folderField.trailingAnchor constraintEqualToAnchor:fieldContainer.trailingAnchor constant:-12],
         [self.folderField.topAnchor constraintEqualToAnchor:fieldContainer.topAnchor],
         [self.folderField.bottomAnchor constraintEqualToAnchor:fieldContainer.bottomAnchor],
-        [browse.widthAnchor constraintEqualToConstant:114],
-        [row.widthAnchor constraintEqualToAnchor:folder.widthAnchor]
+        [browse.widthAnchor constraintEqualToConstant:114], [row.widthAnchor constraintEqualToAnchor:folder.widthAnchor]
     ]];
     self.folderError = [self label:@"" size:12 weight:NSFontWeightRegular color:NSColor.systemRedColor];
     self.folderError.hidden = YES;
-    NSStackView *content = [self stack:@[cone, [self spacer:29], title, [self spacer:37], description,
-                                       [self spacer:54], folder] vertical:YES spacing:0];
+    NSStackView *content =
+        [self stack:@[ cone, [self spacer:29], title, [self spacer:37], description, [self spacer:54], folder ]
+            vertical:YES
+             spacing:0];
     [self.surface addSubview:content];
     [self.surface addSubview:self.folderError];
     [NSLayoutConstraint activateConstraints:@[
@@ -382,8 +421,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     NSImageView *image = [self image:name];
     [wrapper addSubview:image];
     [NSLayoutConstraint activateConstraints:@[
-        [wrapper.widthAnchor constraintEqualToConstant:width],
-        [wrapper.heightAnchor constraintEqualToConstant:17.6],
+        [wrapper.widthAnchor constraintEqualToConstant:width], [wrapper.heightAnchor constraintEqualToConstant:17.6],
         [image.centerXAnchor constraintEqualToAnchor:wrapper.centerXAnchor],
         [image.centerYAnchor constraintEqualToAnchor:wrapper.centerYAnchor]
     ]];
@@ -392,8 +430,10 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 
 - (NSTextField *)previewTime:(NSString *)time
 {
-    NSTextField *label = [self alignedLabel:time size:8.25 weight:NSFontWeightRegular
-                             color:VLCRedesignAppearance.subduedColor];
+    NSTextField *label = [self alignedLabel:time
+                                       size:8.25
+                                     weight:NSFontWeightRegular
+                                      color:VLCRedesignAppearance.subduedColor];
     label.alignment = NSTextAlignmentCenter;
     [label.widthAnchor constraintEqualToConstant:41.8].active = YES;
     return label;
@@ -423,7 +463,9 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         [self wrappedImage:@"VLC-redesign-preview-maximize" width:19.8],
         [self wrappedImage:@"VLC-redesign-preview-fullscreen" width:19.8],
         [self wrappedImage:@"VLC-redesign-preview-close" width:19.8]
-    ] vertical:NO spacing:0];
+    ]
+                                  vertical:NO
+                                   spacing:0];
     [header addSubview:decorations];
     [NSLayoutConstraint activateConstraints:@[
         [header.leadingAnchor constraintEqualToAnchor:preview.leadingAnchor],
@@ -452,8 +494,12 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         [playIcon.centerXAnchor constraintEqualToAnchor:play.centerXAnchor],
         [playIcon.centerYAnchor constraintEqualToAnchor:play.centerYAnchor]
     ]];
-    NSStackView *transport = [self stack:@[[self wrappedImage:@"VLC-redesign-preview-previous" width:16.5], play,
-                                          [self wrappedImage:@"VLC-redesign-preview-next" width:16.5]] vertical:NO spacing:4.4];
+    NSStackView *transport = [self stack:@[
+        [self wrappedImage:@"VLC-redesign-preview-previous" width:16.5], play,
+        [self wrappedImage:@"VLC-redesign-preview-next" width:16.5]
+    ]
+                                vertical:NO
+                                 spacing:4.4];
     NSView *seek = [[NSView alloc] init];
     seek.translatesAutoresizingMaskIntoConstraints = NO;
     seek.wantsLayer = YES;
@@ -462,9 +508,10 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     NSView *progress = [[NSView alloc] init];
     progress.translatesAutoresizingMaskIntoConstraints = NO;
     progress.wantsLayer = YES;
-    progress.layer.backgroundColor = VLCRedesignAppearance.accentIndex == 0 ?
-        [VLCRedesignAppearance colorWithRGB:VLCRedesignAppearance.dark ? 0x371f06 : 0xd8ba9a].CGColor :
-        [VLCRedesignAppearance.accentColor colorWithAlphaComponent:.25].CGColor;
+    progress.layer.backgroundColor =
+        VLCRedesignAppearance.accentIndex == 0
+            ? [VLCRedesignAppearance colorWithRGB:VLCRedesignAppearance.dark ? 0x371f06 : 0xd8ba9a].CGColor
+            : [VLCRedesignAppearance.accentColor colorWithAlphaComponent:.25].CGColor;
     progress.layer.cornerRadius = 4;
     [seek addSubview:progress];
     NSView *thumb = [[NSView alloc] init];
@@ -473,21 +520,27 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     thumb.layer.backgroundColor = VLCRedesignAppearance.accentColor.CGColor;
     thumb.layer.cornerRadius = 2;
     [seek addSubview:thumb];
-    NSStackView *timeGroup = [self stack:@[[self previewTime:@"00:02:10"], seek,
-                                           [self previewTime:@"00:25:40"]] vertical:NO spacing:4.4];
+    NSStackView *timeGroup = [self stack:@[ [self previewTime:@"00:02:10"], seek, [self previewTime:@"00:25:40"] ]
+                                vertical:NO
+                                 spacing:4.4];
     [timeGroup setHuggingPriority:NSLayoutPriorityDefaultLow forOrientation:NSLayoutConstraintOrientationHorizontal];
     NSImageView *speaker = [self image:@"VLC-redesign-preview-speaker"];
     speaker.wantsLayer = YES;
     speaker.layer.affineTransform = CGAffineTransformMakeScale(-1, 1);
-    NSStackView *volume = [self stack:@[speaker, [self image:@"VLC-redesign-preview-volume"]] vertical:NO spacing:4.4];
+    NSStackView *volume = [self stack:@[ speaker, [self image:@"VLC-redesign-preview-volume"] ]
+                             vertical:NO
+                              spacing:4.4];
     NSStackView *tools = [self stack:@[
         [self wrappedImage:@"VLC-redesign-preview-audio" width:16.5],
         [self wrappedImage:@"VLC-redesign-preview-subtitles" width:16.5],
         [self wrappedImage:@"VLC-redesign-preview-settings" width:16.5]
-    ] vertical:NO spacing:6.6];
-    NSStackView *row = [self stack:@[transport, timeGroup, volume, tools,
-                                    [self wrappedImage:@"VLC-redesign-preview-queue" width:16.5]]
-                          vertical:NO spacing:11];
+    ]
+                            vertical:NO
+                             spacing:6.6];
+    NSStackView *row = [self
+           stack:@[ transport, timeGroup, volume, tools, [self wrappedImage:@"VLC-redesign-preview-queue" width:16.5] ]
+        vertical:NO
+         spacing:11];
     row.distribution = NSStackViewDistributionFill;
     [bar addSubview:row];
     [NSLayoutConstraint activateConstraints:@[
@@ -517,8 +570,8 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 {
     NSView *preview = [self preview];
     [self.surface addSubview:preview positioned:NSWindowBelow relativeTo:nil];
-    NSLayoutConstraint *preferredPreviewWidth =
-        [preview.widthAnchor constraintEqualToAnchor:self.surface.widthAnchor constant:-34];
+    NSLayoutConstraint *preferredPreviewWidth = [preview.widthAnchor constraintEqualToAnchor:self.surface.widthAnchor
+                                                                                    constant:-34];
     /* A stronger preference becomes part of NSWindow's minimum fitting size. */
     preferredPreviewWidth.priority = NSLayoutPriorityDefaultLow;
     [NSLayoutConstraint activateConstraints:@[
@@ -529,16 +582,18 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         [preview.heightAnchor constraintEqualToAnchor:preview.widthAnchor multiplier:9. / 16.],
         [preview.centerYAnchor constraintEqualToAnchor:self.surface.centerYAnchor constant:-63.5]
     ]];
-    NSTextField *prompt = [self label:_NS("Select your preferred theme and color.") size:24
-                               weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor];
+    NSTextField *prompt = [self label:_NS("Select your preferred theme and color.")
+                                 size:24
+                               weight:NSFontWeightLight
+                                color:VLCRedesignAppearance.subduedColor];
     [self.surface addSubview:prompt];
     [NSLayoutConstraint activateConstraints:@[
         [prompt.centerXAnchor constraintEqualToAnchor:self.surface.centerXAnchor],
         [prompt.topAnchor constraintEqualToAnchor:self.surface.centerYAnchor constant:-206.5]
     ]];
     NSMutableArray *choices = [NSMutableArray array];
-    NSArray *themes = @[@"light", @"dark", @"system"];
-    NSArray *titles = @[_NS("Light"), _NS("Dark"), _NS("System")];
+    NSArray *themes = @[ @"light", @"dark", @"system" ];
+    NSArray *titles = @[ _NS("Light"), _NS("Dark"), _NS("System") ];
     for (NSInteger i = 0; i < 3; i++) {
         VLCOnboardingThemeButton *button = [[VLCOnboardingThemeButton alloc] initWithFrame:NSZeroRect];
         button.title = titles[i];
@@ -559,9 +614,11 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         [themeRow.centerXAnchor constraintEqualToAnchor:self.surface.centerXAnchor],
         [themeRow.topAnchor constraintEqualToAnchor:self.surface.centerYAnchor constant:-93.5]
     ]];
-    NSArray *colors = @[@"orange", @"red", @"yellow", @"green", @"cyan", @"blue", @"purple", @"pink", @"gray"];
-    NSArray *colorNames = @[_NS("Orange"), _NS("Red"), _NS("Yellow"), _NS("Green"), _NS("Cyan"),
-                            _NS("Blue"), _NS("Purple"), _NS("Pink"), _NS("Gray")];
+    NSArray *colors = @[ @"orange", @"red", @"yellow", @"green", @"cyan", @"blue", @"purple", @"pink", @"gray" ];
+    NSArray *colorNames = @[
+        _NS("Orange"), _NS("Red"), _NS("Yellow"), _NS("Green"), _NS("Cyan"), _NS("Blue"), _NS("Purple"), _NS("Pink"),
+        _NS("Gray")
+    ];
     NSMutableArray *swatches = [NSMutableArray array];
     for (NSInteger i = 0; i < 9; i++) {
         VLCOnboardingAccentButton *button = [[VLCOnboardingAccentButton alloc] initWithFrame:NSZeroRect];
@@ -585,8 +642,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     NSLayoutConstraint *preferredWidth = [palette.widthAnchor constraintEqualToConstant:704];
     preferredWidth.priority = NSLayoutPriorityDefaultHigh;
     [NSLayoutConstraint activateConstraints:@[
-        preferredWidth,
-        [palette.leadingAnchor constraintEqualToAnchor:self.surface.leadingAnchor constant:41],
+        preferredWidth, [palette.leadingAnchor constraintEqualToAnchor:self.surface.leadingAnchor constant:41],
         [palette.trailingAnchor constraintLessThanOrEqualToAnchor:back.leadingAnchor constant:-20],
         [palette.bottomAnchor constraintEqualToAnchor:self.surface.bottomAnchor constant:-40]
     ]];
@@ -609,13 +665,17 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     NSString *raw = @"";
     if ([option hasPrefix:@"menu:"]) {
         NSMenuItem *item = [self itemWithAction:NSSelectorFromString([option substringFromIndex:5])
-                                      inMenu:NSApp.mainMenu];
+                                         inMenu:NSApp.mainMenu];
         if (item.keyEquivalent.length) {
             NSMutableArray *parts = [NSMutableArray array];
-            if (item.keyEquivalentModifierMask & NSEventModifierFlagCommand) [parts addObject:@"Command"];
-            if (item.keyEquivalentModifierMask & NSEventModifierFlagControl) [parts addObject:@"Ctrl"];
-            if (item.keyEquivalentModifierMask & NSEventModifierFlagOption) [parts addObject:@"Alt"];
-            if (item.keyEquivalentModifierMask & NSEventModifierFlagShift) [parts addObject:@"Shift"];
+            if (item.keyEquivalentModifierMask & NSEventModifierFlagCommand)
+                [parts addObject:@"Command"];
+            if (item.keyEquivalentModifierMask & NSEventModifierFlagControl)
+                [parts addObject:@"Ctrl"];
+            if (item.keyEquivalentModifierMask & NSEventModifierFlagOption)
+                [parts addObject:@"Alt"];
+            if (item.keyEquivalentModifierMask & NSEventModifierFlagShift)
+                [parts addObject:@"Shift"];
             [parts addObject:item.keyEquivalent];
             raw = [parts componentsJoinedByString:@"+"];
         }
@@ -626,14 +686,16 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     }
     raw = [raw componentsSeparatedByString:@"\t"].firstObject;
     NSString *display = raw.length ? OSXStringKeyToString(raw) : _NS("Not Set");
-    NSTextField *label = [self alignedLabel:display size:16 weight:NSFontWeightLight
-                             color:VLCRedesignAppearance.secondaryColor];
+    NSTextField *label = [self alignedLabel:display
+                                       size:16
+                                     weight:NSFontWeightLight
+                                      color:VLCRedesignAppearance.secondaryColor];
     label.alignment = NSTextAlignmentCenter;
     label.maximumNumberOfLines = 1;
     label.cell.wraps = NO;
     label.lineBreakMode = NSLineBreakByClipping;
     NSAttributedString *keyTitle = [[NSAttributedString alloc] initWithString:display
-        attributes:@{NSFontAttributeName:label.font}];
+                                                                   attributes:@{NSFontAttributeName : label.font}];
     CTLineRef keyLine = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)keyTitle);
     CGFloat keyWidth = ceil(CTLineGetTypographicBounds(keyLine, NULL, NULL, NULL));
     CFRelease(keyLine);
@@ -646,8 +708,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     cap.layer.borderWidth = 3;
     [cap addSubview:label];
     [NSLayoutConstraint activateConstraints:@[
-        [cap.heightAnchor constraintEqualToConstant:44],
-        [cap.widthAnchor constraintGreaterThanOrEqualToConstant:44],
+        [cap.heightAnchor constraintEqualToConstant:44], [cap.widthAnchor constraintGreaterThanOrEqualToConstant:44],
         [label.widthAnchor constraintGreaterThanOrEqualToConstant:keyWidth],
         [label.leadingAnchor constraintEqualToAnchor:cap.leadingAnchor constant:12],
         [label.trailingAnchor constraintEqualToAnchor:cap.trailingAnchor constant:-12],
@@ -661,7 +722,10 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     NSMutableArray *views = [NSMutableArray array];
     for (NSString *option in options) {
         if (views.count)
-            [views addObject:[self alignedLabel:@"/" size:16 weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor]];
+            [views addObject:[self alignedLabel:@"/"
+                                           size:16
+                                         weight:NSFontWeightLight
+                                          color:VLCRedesignAppearance.subduedColor]];
         [views addObject:[self keycap:option]];
     }
     return [self stack:views vertical:NO spacing:10];
@@ -669,32 +733,49 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 
 - (void)buildShortcuts
 {
-    NSTextField *title = [self label:_NS("Learn the basic keyboard shortcuts.") size:24
-                              weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor];
+    NSTextField *title = [self label:_NS("Learn the basic keyboard shortcuts.")
+                                size:24
+                              weight:NSFontWeightLight
+                               color:VLCRedesignAppearance.subduedColor];
     [self.surface addSubview:title];
     [NSLayoutConstraint activateConstraints:@[
         [title.centerXAnchor constraintEqualToAnchor:self.surface.centerXAnchor],
         [title.topAnchor constraintEqualToAnchor:self.surface.topAnchor constant:70]
     ]];
-    NSArray *leftLabels = @[_NS("Play / Pause"), _NS("Seek Backward / Forward"), _NS("Previous / Next Item"),
-                            _NS("Previous / Next Frame"), _NS("Cycle Subtitle Track"), _NS("Cycle Audio Track")];
-    NSArray *leftKeys = @[@[@"key-play-pause"], @[@"key-jump-extrashort", @"key-jump+extrashort"],
-                          @[@"key-prev", @"key-next"], @[@"key-frame-previous", @"key-frame-next"],
-                          @[@"key-subtitle-track"], @[@"key-audio-track"]];
-    NSArray *rightLabels = @[_NS("Toggle Fullscreen"), _NS("Increase / Decrease Volume"), _NS("Show / Hide Queue"),
-                             _NS("Show / Hide File Browser"), _NS("Take a Snapshot"), _NS("Record")];
-    NSArray *rightKeys = @[@[@"key-toggle-fullscreen"], @[@"key-vol-up", @"key-vol-down"],
-                           @[@"menu:showPlayQueue:"], @[], @[@"key-snapshot"], @[@"key-record"]];
+    NSArray *leftLabels = @[
+        _NS("Play / Pause"), _NS("Seek Backward / Forward"), _NS("Previous / Next Item"), _NS("Previous / Next Frame"),
+        _NS("Cycle Subtitle Track"), _NS("Cycle Audio Track")
+    ];
+    NSArray *leftKeys = @[
+        @[ @"key-play-pause" ], @[ @"key-jump-extrashort", @"key-jump+extrashort" ], @[ @"key-prev", @"key-next" ],
+        @[ @"key-frame-previous", @"key-frame-next" ], @[ @"key-subtitle-track" ], @[ @"key-audio-track" ]
+    ];
+    NSArray *rightLabels = @[
+        _NS("Toggle Fullscreen"), _NS("Increase / Decrease Volume"), _NS("Show / Hide Queue"),
+        _NS("Show / Hide File Browser"), _NS("Take a Snapshot"), _NS("Record")
+    ];
+    NSArray *rightKeys = @[
+        @[ @"key-toggle-fullscreen" ], @[ @"key-vol-up", @"key-vol-down" ], @[ @"menu:showPlayQueue:" ], @[],
+        @[ @"key-snapshot" ], @[ @"key-record" ]
+    ];
     NSMutableArray *columns = [NSMutableArray array];
     for (NSInteger column = 0; column < 2; column++) {
         NSMutableArray *rows = [NSMutableArray array];
         NSArray *labels = column == 0 ? leftLabels : rightLabels;
         NSArray *keys = column == 0 ? leftKeys : rightKeys;
         for (NSInteger row = 0; row < 6; row++) {
-            NSView *caps = [keys[row] count] ? [self keys:keys[row]] :
-                [self alignedLabel:_NS("Not Set") size:14 weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor];
-            [rows addObject:@[[self alignedLabel:labels[row] size:16 weight:NSFontWeightLight
-                                    color:VLCRedesignAppearance.subduedColor], caps]];
+            NSView *caps = [keys[row] count] ? [self keys:keys[row]]
+                                             : [self alignedLabel:_NS("Not Set")
+                                                             size:14
+                                                           weight:NSFontWeightLight
+                                                            color:VLCRedesignAppearance.subduedColor];
+            [rows addObject:@[
+                [self alignedLabel:labels[row]
+                              size:16
+                            weight:NSFontWeightLight
+                             color:VLCRedesignAppearance.subduedColor],
+                caps
+            ]];
         }
         NSGridView *grid = [NSGridView gridViewWithViews:rows];
         grid.translatesAutoresizingMaskIntoConstraints = NO;
@@ -715,8 +796,10 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         [content.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.surface.leadingAnchor constant:45],
         [content.trailingAnchor constraintLessThanOrEqualToAnchor:self.surface.trailingAnchor constant:-45]
     ]];
-    NSTextField *hint = [self label:_NS("Find the full list in the menu.") size:16
-                             weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor];
+    NSTextField *hint = [self label:_NS("Find the full list in the menu.")
+                               size:16
+                             weight:NSFontWeightLight
+                              color:VLCRedesignAppearance.subduedColor];
     [self.surface addSubview:hint];
     [NSLayoutConstraint activateConstraints:@[
         [hint.leadingAnchor constraintEqualToAnchor:self.surface.leadingAnchor constant:62],
@@ -726,7 +809,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 
 - (void)selectTheme:(NSButton *)sender
 {
-    VLCRedesignAppearance.theme = @[@"light", @"dark", @"system"][sender.tag];
+    VLCRedesignAppearance.theme = @[ @"light", @"dark", @"system" ][sender.tag];
 }
 
 - (void)selectAccent:(NSButton *)sender
@@ -741,25 +824,29 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     panel.canChooseDirectories = YES;
     panel.allowsMultipleSelection = NO;
     panel.prompt = _NS("Choose Folder");
-    panel.directoryURL = self.folderField.stringValue.length ?
-        [NSURL fileURLWithPath:self.folderField.stringValue.stringByExpandingTildeInPath] : nil;
-    [panel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse response) {
-        if (response == NSModalResponseOK && panel.URL) {
-            self.folderPath = panel.URL.path.stringByAbbreviatingWithTildeInPath;
-            self.folderField.stringValue = self.folderPath;
-            self.folderError.hidden = YES;
-        }
-    }];
+    panel.directoryURL = self.folderField.stringValue.length
+                             ? [NSURL fileURLWithPath:self.folderField.stringValue.stringByExpandingTildeInPath]
+                             : nil;
+    [panel beginSheetModalForWindow:self.window
+                  completionHandler:^(NSModalResponse response) {
+                      if (response == NSModalResponseOK && panel.URL) {
+                          self.folderPath = panel.URL.path.stringByAbbreviatingWithTildeInPath;
+                          self.folderField.stringValue = self.folderPath;
+                          self.folderError.hidden = YES;
+                      }
+                  }];
 }
 
 - (void)next:(id)sender
 {
     if (self.step == 0) {
-        self.folderPath = [self.folderField.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+        self.folderPath = [self.folderField.stringValue
+            stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
         BOOL isDirectory = NO;
         if (self.folderPath.length &&
             (![NSFileManager.defaultManager fileExistsAtPath:self.folderPath.stringByExpandingTildeInPath
-                                               isDirectory:&isDirectory] || !isDirectory)) {
+                                                 isDirectory:&isDirectory] ||
+             !isDirectory)) {
             self.folderError.stringValue = _NS("Choose an existing folder, or leave this blank to add media later.");
             self.folderError.hidden = NO;
             [self.window makeFirstResponder:self.folderField];
@@ -777,7 +864,8 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         if (result != VLC_SUCCESS) {
             NSAlert *alert = [[NSAlert alloc] init];
             alert.messageText = _NS("VLC could not add this media folder.");
-            alert.informativeText = _NS("Go back to choose another folder, or leave the folder empty to add media later.");
+            alert.informativeText =
+                _NS("Go back to choose another folder, or leave the folder empty to add media later.");
             [alert beginSheetModalForWindow:self.window completionHandler:nil];
             return;
         }

@@ -13,24 +13,31 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
         return;
 
     NSMutableAttributedString *content = text.mutableCopy;
-    NSMutableParagraphStyle *paragraph = [[content attribute:NSParagraphStyleAttributeName atIndex:0
-                                              effectiveRange:NULL] mutableCopy] ?: [[NSMutableParagraphStyle alloc] init];
+    NSMutableParagraphStyle *paragraph = [[content attribute:NSParagraphStyleAttributeName
+                                                     atIndex:0
+                                              effectiveRange:NULL] mutableCopy]
+                                             ?: [[NSMutableParagraphStyle alloc] init];
     paragraph.alignment = alignment;
     [content addAttribute:NSParagraphStyleAttributeName value:paragraph range:NSMakeRange(0, content.length)];
     if (paragraph.lineBreakMode == NSLineBreakByTruncatingHead ||
         paragraph.lineBreakMode == NSLineBreakByTruncatingMiddle ||
         paragraph.lineBreakMode == NSLineBreakByTruncatingTail) {
         CTLineRef line = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)content);
-        NSAttributedString *ellipsis = [[NSAttributedString alloc] initWithString:@"…" attributes:[content attributesAtIndex:0 effectiveRange:NULL]];
+        NSAttributedString *ellipsis = [[NSAttributedString alloc] initWithString:@"…"
+                                                                       attributes:[content attributesAtIndex:0
+                                                                                              effectiveRange:NULL]];
         CTLineRef token = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)ellipsis);
-        CTLineTruncationType type = paragraph.lineBreakMode == NSLineBreakByTruncatingMiddle ? kCTLineTruncationMiddle :
-                                   paragraph.lineBreakMode == NSLineBreakByTruncatingHead ? kCTLineTruncationStart : kCTLineTruncationEnd;
+        CTLineTruncationType type = paragraph.lineBreakMode == NSLineBreakByTruncatingMiddle ? kCTLineTruncationMiddle
+                                    : paragraph.lineBreakMode == NSLineBreakByTruncatingHead ? kCTLineTruncationStart
+                                                                                             : kCTLineTruncationEnd;
         CTLineRef truncated = CTLineCreateTruncatedLine(line, NSWidth(bounds), type, token);
         CTLineRef visible = truncated ?: line;
         CGRect ink = CTLineGetBoundsWithOptions(visible, kCTLineBoundsUseGlyphPathBounds);
         CGFloat x = NSMinX(bounds) - CGRectGetMinX(ink);
-        if (alignment == NSTextAlignmentCenter) x = NSMidX(bounds) - CGRectGetMidX(ink);
-        else if (alignment == NSTextAlignmentRight) x = NSMaxX(bounds) - CGRectGetMaxX(ink);
+        if (alignment == NSTextAlignmentCenter)
+            x = NSMidX(bounds) - CGRectGetMidX(ink);
+        else if (alignment == NSTextAlignmentRight)
+            x = NSMaxX(bounds) - CGRectGetMaxX(ink);
         CGContextRef context = NSGraphicsContext.currentContext.CGContext;
         CGContextSaveGState(context);
         CGContextClipToRect(context, bounds);
@@ -42,16 +49,17 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
         CGContextSetTextPosition(context, x, NSMidY(bounds) - CGRectGetMidY(ink));
         CTLineDraw(visible, context);
         CGContextRestoreGState(context);
-        if (truncated) CFRelease(truncated);
+        if (truncated)
+            CFRelease(truncated);
         CFRelease(token);
         CFRelease(line);
         return;
     }
-    NSFont *font = [content attribute:NSFontAttributeName atIndex:0 effectiveRange:NULL] ?:
-                   [NSFont systemFontOfSize:NSFont.systemFontSize];
+    NSFont *font = [content attribute:NSFontAttributeName atIndex:0 effectiveRange:NULL]
+                       ?: [NSFont systemFontOfSize:NSFont.systemFontSize];
     CTFramesetterRef setter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)content);
     CGSize size = CTFramesetterSuggestFrameSizeWithConstraints(setter, CFRangeMake(0, content.length), NULL,
-                                                              CGSizeMake(NSWidth(bounds), CGFLOAT_MAX), NULL);
+                                                               CGSizeMake(NSWidth(bounds), CGFLOAT_MAX), NULL);
     CGFloat extraLine = ceil(font.ascender - font.descender + font.leading);
     CGFloat layoutHeight = MAX(NSHeight(bounds), ceil(size.height) + extraLine);
     CGPathRef path = CGPathCreateWithRect(CGRectMake(0, 0, NSWidth(bounds), layoutHeight), NULL);
@@ -101,6 +109,7 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
 }
 
 @implementation VLCRedesignAlignedLabel
+
 - (NSEdgeInsets)alignmentRectInsets
 {
     /* Text is drawn in our bounds, without NSTextFieldCell's native padding. */
@@ -120,9 +129,11 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
     }
     VLCDrawAlignedText(text, self.bounds, self.flipped, self.alignment);
 }
+
 @end
 
 @implementation VLCRedesignAlignedTextFieldCell
+
 - (NSRect)drawingRectForBounds:(NSRect)bounds
 {
     NSRect rect = [super drawingRectForBounds:bounds];
@@ -132,7 +143,7 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
 
     NSString *text = self.stringValue.length ? self.stringValue : self.placeholderString;
     NSAttributedString *title = [[NSAttributedString alloc] initWithString:text ?: @""
-        attributes:@{NSFontAttributeName:self.font}];
+                                                                attributes:@{NSFontAttributeName : self.font}];
     CTLineRef line = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)title);
     CGFloat inkMidY = CGRectGetMidY(CTLineGetBoundsWithOptions(line, kCTLineBoundsUseGlyphPathBounds));
     CFRelease(line);
@@ -143,17 +154,28 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
     return rect;
 }
 
-- (void)selectWithFrame:(NSRect)rect inView:(NSView *)view editor:(NSText *)editor
-              delegate:(id)delegate start:(NSInteger)start length:(NSInteger)length
+- (void)selectWithFrame:(NSRect)rect
+                 inView:(NSView *)view
+                 editor:(NSText *)editor
+               delegate:(id)delegate
+                  start:(NSInteger)start
+                 length:(NSInteger)length
 {
-    [super selectWithFrame:[self drawingRectForBounds:rect] inView:view editor:editor
-                  delegate:delegate start:start length:length];
+    [super selectWithFrame:[self drawingRectForBounds:rect]
+                    inView:view
+                    editor:editor
+                  delegate:delegate
+                     start:start
+                    length:length];
 }
 
-- (void)editWithFrame:(NSRect)rect inView:(NSView *)view editor:(NSText *)editor
-            delegate:(id)delegate event:(NSEvent *)event
+- (void)editWithFrame:(NSRect)rect
+               inView:(NSView *)view
+               editor:(NSText *)editor
+             delegate:(id)delegate
+                event:(NSEvent *)event
 {
-    [super editWithFrame:[self drawingRectForBounds:rect] inView:view editor:editor
-                delegate:delegate event:event];
+    [super editWithFrame:[self drawingRectForBounds:rect] inView:view editor:editor delegate:delegate event:event];
 }
+
 @end
