@@ -89,3 +89,22 @@ The full build and packaging ran through `resume-build.sh redesign-player-browse
 Local deliverables are `build-macos-baseline/artifacts/macos-player-preview-a835ba0a9e/VLC.app` and `build-macos-baseline/artifacts/VLC-player-preview-arm64.dmg`. The disk image passes `hdiutil verify` with CRC32 `FC04BFFE`. The staged folder contains a machine-readable verification record and scope README. Earlier previews and the unchanged baseline app remain in their separate folders. User media, test media and library databases are not bundled.
 
 The staged app was launched by its own executable path, outside the working `VLC.app` build copy, with the supplied local MKV. Actual video and English subtitles rendered, and the selector exposed all 19 embedded subtitle tracks. Live resize checks at 802 and 604 points retained the duration; a pointer click sought to 1:30 after resizing. Full-library expansion opened the same fixture folder with playback still at 1:30. Cross-panel pointer-drop completion, network-source contents, fullscreen edge-hover and PiP return remain acceptance work. The four-tab inspector, seek thumbnails, complete library redesign and Windows port are still pending.
+
+## Code-quality preview refresh, October 17
+
+Source `e4bc2a9d9261fcc7f03251dabb2cffa0969a56ab` includes the Cocoa code-quality review recorded in
+[player status](player-status.md). The full arm64 build/package ran through
+`resume-build.sh redesign-quality`. The staged app is
+`build-macos-baseline/artifacts/macos-player-preview-e4bc2a9d92/VLC.app`; the
+updated disk image remains `build-macos-baseline/artifacts/VLC-player-preview-arm64.dmg`.
+Both app copies pass deep strict ad-hoc signature verification, with 390 plugins.
+The disk image passes `hdiutil verify`, CRC32 `8AE1DF2E`.
+
+Executable SHA-256: `31a678cf79c81366f96519a7d901a193fa5ad56462ede3d1d8f88c7e37de4804`.
+Native macOS plugin SHA-256: `2eebfd761cb64e2b26796a5210c66ec190b22f52224ede8ef230c0315dc04225`.
+The parser's 12 regression cases also pass against the staged module. The
+staged app opens the generated chapter video, loads its six-item fixture
+folder in the compact browser, and changes from Play to Pause on playback.
+Signing remains local/ad-hoc and is not notarized. Earlier staged apps and the
+unchanged baseline are preserved. The scope and remaining redesign work have
+not changed.
