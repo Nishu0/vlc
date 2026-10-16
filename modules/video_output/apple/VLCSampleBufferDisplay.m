@@ -856,6 +856,7 @@ API_AVAILABLE(tvos(17.0), visionos(1.0))
     @property (nonatomic) VLCSampleBufferSubpicture *subpicture;
     @property (nonatomic) id<VLCPixelBufferRotationContext> rotationContext;
     @property (nonatomic) VLCDisplayCriteriaMatcher *displayModeMatcher;
+    @property (nonatomic) video_orientation_t videoOrientation;
 
     @property (nonatomic, readonly) pip_controller_t *pipcontroller;
 
@@ -1056,7 +1057,7 @@ static void RenderPicture(vout_display_t *vd, picture_t *pic, vlc_tick_t date) {
     VLCSampleBufferDisplay *sys;
     sys = (__bridge VLCSampleBufferDisplay*)vd->sys;
 
-    switch (vd->fmt->orientation) {
+    switch (sys.videoOrientation) {
     case ORIENT_HFLIPPED:
         sys.rotationContext.flip = kVLCSampleBufferPixelFlip_H;
         sys.rotationContext.rotation = kVLCSampleBufferPixelRotation_0;
@@ -1113,7 +1114,7 @@ static void RenderPicture(vout_display_t *vd, picture_t *pic, vlc_tick_t date) {
         return;
     }
 
-    if (vd->fmt->orientation != ORIENT_NORMAL) {
+    if (sys.videoOrientation != ORIENT_NORMAL) {
         CVPixelBufferRef rotated = [sys.rotationContext rotate:pixelBuffer];
         if (rotated) {
             CVPixelBufferRelease(pixelBuffer);
@@ -1396,6 +1397,7 @@ static int UpdateFormat(vout_display_t *vd, const video_format_t *fmt,
 
     const video_format_t *displayFormat =
         converter != NULL ? &converter->fmt_out.video : fmt;
+    sys.videoOrientation = displayFormat->orientation;
     [sys.displayModeMatcher matchVideoFormat:displayFormat];
     return VLC_SUCCESS;
 }
@@ -1433,6 +1435,7 @@ static int Open (vout_display_t *vd,
 
         const video_format_t *displayFormat =
             converter != NULL ? &converter->fmt_out.video : fmt;
+        sys.videoOrientation = displayFormat->orientation;
         [sys.displayModeMatcher matchVideoFormat:displayFormat];
 
         vd->sys = (__bridge_retained void*)sys;

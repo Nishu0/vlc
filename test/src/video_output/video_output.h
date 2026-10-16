@@ -33,6 +33,8 @@ struct vout_scenario {
     void (*decoder_decode)(decoder_t *, block_t *);
     int  (*display_setup)(vout_display_t *, video_format_t *,
                           struct vlc_video_context *);
+    int  (*display_update_format)(vout_display_t *, const video_format_t *,
+                                  struct vlc_video_context *);
     void (*display_prepare)(vout_display_t *, picture_t *);
     void (*display_display)(vout_display_t *, picture_t *);
     void (*filter_setup)(filter_t *);

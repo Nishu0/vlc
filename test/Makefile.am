@@ -343,6 +343,9 @@ test_src_video_output_SOURCES = \
 	src/video_output/video_output.h \
 	src/video_output/video_output_scenarios.c
 test_src_video_output_LDADD = $(LIBVLCCORE) $(LIBVLC)
+if HAVE_DARWIN
+test_src_video_output_LDFLAGS = $(AM_LDFLAGS) -Wl,-exported_symbol,_vlc_static_modules
+endif
 test_src_video_output_inhibit_SOURCES = src/video_output/inhibit.c
 test_src_video_output_inhibit_LDADD = $(LIBVLCCORE) $(LIBVLC)
 test_src_video_output_opengl_SOURCES = src/video_output/opengl.c

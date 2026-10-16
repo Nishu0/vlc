@@ -116,14 +116,21 @@ static int OpenDecoder(vlc_object_t *obj)
     return VLC_SUCCESS;
 }
 
+static picture_t *FilterPicture(filter_t *filter, picture_t *picture)
+{
+    VLC_UNUSED(filter);
+    return picture;
+}
+
 static int OpenFilter(filter_t *filter)
 {
+    struct vout_scenario *scenario = &vout_scenarios[current_scenario];
+    assert(scenario->filter_setup != NULL);
+    scenario->filter_setup(filter);
     static const struct vlc_filter_operations ops = {
-        .filter_video = NULL,
-        .close = NULL,
+        .filter_video = FilterPicture,
     };
     filter->ops = &ops;
-
     return VLC_SUCCESS;
 }
 
@@ -164,10 +171,29 @@ static int OpenWindow(vlc_window_t *wnd)
     return VLC_SUCCESS;
 }
 
+static void Prepare(vout_display_t *vd, picture_t *picture,
+                    const struct vlc_render_subpicture *subpicture, vlc_tick_t date)
+{
+    VLC_UNUSED(date); VLC_UNUSED(subpicture);
+    struct vout_scenario *scenario = &vout_scenarios[current_scenario];
+    if (scenario->display_prepare != NULL)
+        scenario->display_prepare(vd, picture);
+}
+
 static void Display(vout_display_t *vd, picture_t *picture)
 {
-    (void) vd;
-    (void) picture;
+    struct vout_scenario *scenario = &vout_scenarios[current_scenario];
+    if (scenario->display_display != NULL)
+        scenario->display_display(vd, picture);
+}
+
+static int UpdateDisplayFormat(vout_display_t *vd, const video_format_t *fmt,
+                               struct vlc_video_context *vctx)
+{
+    struct vout_scenario *scenario = &vout_scenarios[current_scenario];
+    if (scenario->display_update_format == NULL)
+        return VLC_EGENERIC;
+    return scenario->display_update_format(vd, fmt, vctx);
 }
 
 static int OpenDisplay(vout_display_t *vd, video_format_t *fmtp,
@@ -176,6 +202,8 @@ static int OpenDisplay(vout_display_t *vd, video_format_t *fmtp,
     static const struct vlc_display_operations ops =
     {
         .display = Display,
+        .prepare = Prepare,
+        .update_format = UpdateDisplayFormat,
     };
     vd->ops = &ops;
 

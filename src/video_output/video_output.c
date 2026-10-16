@@ -853,6 +853,26 @@ static int strcmp_void(const void *a, const void *b)
     return strcmp(a, *entry);
 }
 
+/* Keep the private picture pool in step with a format accepted by the display. */
+static int ChangeDisplayFormat(vout_thread_sys_t *vout, const video_format_t *fmt,
+                               vlc_video_context *vctx)
+{
+    vout_thread_sys_t *sys = vout;
+    picture_pool_t *pool = picture_pool_NewFromFormat(fmt, FILTER_POOL_SIZE);
+    if (pool == NULL)
+        return VLC_ENOMEM;
+
+    int ret = vout_SetDisplayFormat(sys->display, fmt, vctx);
+    if (ret != VLC_SUCCESS)
+    {
+        picture_pool_Release(pool);
+        return ret;
+    }
+    picture_pool_Release(sys->private_pool);
+    sys->private_pool = pool;
+    return VLC_SUCCESS;
+}
+
 static void ChangeFilters(vout_thread_sys_t *vout)
 {
     /* bsearch: must be sorted alphabetically */
@@ -960,39 +980,18 @@ static void ChangeFilters(vout_thread_sys_t *vout)
 
         /* Shallow local copy */
         es_format_t tmp = *p_fmt_current;
-        /* Assign the same chroma to compare everything except the chroma */
+        /* The display may accept chroma and orientation changes directly.
+         * In particular, a metadata transform need not download hardware
+         * pictures merely to rotate them in a software converter. */
         tmp.i_codec = fmt_target.i_codec;
         tmp.video.i_chroma = fmt_target.video.i_chroma;
+        tmp.video.orientation = fmt_target.video.orientation;
 
         int ret = VLC_EGENERIC;
 
-        bool only_chroma_changed = es_format_IsSimilar(&tmp, &fmt_target);
-        if (only_chroma_changed)
-        {
-            picture_pool_t *new_private_pool =
-                    picture_pool_NewFromFormat(&p_fmt_current->video,
-                                               FILTER_POOL_SIZE);
-            if (new_private_pool != NULL)
-            {
-                msg_Dbg(&vout->obj, "Changing vout format to %4.4s",
-                                    (const char *) &p_fmt_current->video.i_chroma);
-                /* Only the chroma changed, request the vout to update the format */
-                ret = vout_SetDisplayFormat(sys->display, &p_fmt_current->video,
-                                            vctx_current);
-                if (ret != VLC_SUCCESS)
-                {
-                    picture_pool_Release(new_private_pool);
-                    msg_Dbg(&vout->obj, "Changing vout format to %4.4s failed",
-                            (const char *) &p_fmt_current->video.i_chroma);
-                }
-                else
-                {
-                    // update the pool
-                    picture_pool_Release(sys->private_pool);
-                    sys->private_pool = new_private_pool;
-                }
-            }
-        }
+        bool display_format_change = es_format_IsSimilar(&tmp, &fmt_target);
+        if (display_format_change)
+            ret = ChangeDisplayFormat(vout, &p_fmt_current->video, vctx_current);
 
         if (ret != VLC_SUCCESS)
         {
@@ -1006,6 +1005,14 @@ static void ChangeFilters(vout_thread_sys_t *vout)
                 filter_chain_Reset(sys->filter.chain_interactive, &fmt_target, vctx_target, &fmt_target);
             }
         }
+    }
+
+    /* Removing a format-changing filter must restore the original display
+     * format as well, otherwise its last orientation/chroma remains active. */
+    else if (!video_format_IsSimilar(sys->display->source, &fmt_target.video))
+    {
+        if (ChangeDisplayFormat(vout, &fmt_target.video, vctx_target) != VLC_SUCCESS)
+            msg_Err(&vout->obj, "Failed to restore display format after removing filters");
     }
 
     es_format_Clean(&fmt_target);
