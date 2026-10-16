@@ -166,6 +166,18 @@ static NSImage *VLCPlayerAsset(NSString *role)
 @end
 @implementation VLCPlayerSeekSlider
 + (Class)cellClass { return VLCPlayerSeekCell.class; }
+- (instancetype)initWithFrame:(NSRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        /* Native slider tracking can redraw its cell outside drawRect. Give
+         * that content a separate clipped layer during live window resizing. */
+        self.wantsLayer = YES;
+        self.layer.masksToBounds = YES;
+        if (@available(macOS 10.14,*)) self.clipsToBounds = YES;
+    }
+    return self;
+}
 - (BOOL)wantsUpdateLayer { return NO; }
 - (void)drawRect:(NSRect)dirtyRect { [self.cell drawWithFrame:self.bounds inView:self]; }
 - (NSEdgeInsets)alignmentRectInsets { return NSEdgeInsetsMake(0, 0, 0, 0); }
