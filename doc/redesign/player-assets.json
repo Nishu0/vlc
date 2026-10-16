@@ -467,5 +467,192 @@
     "resource": "VLC-redesign-player-active-settings.svg",
     "role": "active-settings",
     "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "27471.svg",
+    "resource": "VLC-redesign-browser-home.svg",
+    "role": "browser-home",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "b610e.svg",
+    "resource": "VLC-redesign-browser-videos.svg",
+    "role": "browser-videos",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "a7633.svg",
+    "resource": "VLC-redesign-browser-videos-active.svg",
+    "role": "browser-videos-active",
+    "theme": "dark"
+  },
+  {
+    "screen": "4767:23726",
+    "asset": "8b7f6.svg",
+    "resource": "VLC-redesign-browser-music.svg",
+    "role": "browser-music",
+    "theme": "dark",
+    "variable": "Original cached Figma SVG; matched against screen screenshot"
+  },
+  {
+    "screen": "858:5001",
+    "asset": "95b60.svg",
+    "resource": "VLC-redesign-browser-music-active.svg",
+    "role": "browser-music-active",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "6db55.svg",
+    "resource": "VLC-redesign-browser-network.svg",
+    "role": "browser-network",
+    "theme": "dark"
+  },
+  {
+    "screen": "858:5294",
+    "asset": "7f8c3.svg",
+    "resource": "VLC-redesign-browser-network-active.svg",
+    "role": "browser-network-active",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "c9326.svg",
+    "resource": "VLC-redesign-browser-playlists.svg",
+    "role": "browser-playlists",
+    "theme": "dark"
+  },
+  {
+    "screen": "187:328",
+    "asset": "928a2.svg",
+    "resource": "VLC-redesign-browser-playlists-active.svg",
+    "role": "browser-playlists-active",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "50e8b.svg",
+    "resource": "VLC-redesign-browser-recent.svg",
+    "role": "browser-recent",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "bfdda.svg",
+    "resource": "VLC-redesign-browser-add.svg",
+    "role": "browser-add",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "cf6e1.svg",
+    "resource": "VLC-redesign-browser-folder.svg",
+    "role": "browser-folder",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "785d7.svg",
+    "resource": "VLC-redesign-browser-back.svg",
+    "role": "browser-back",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "a7541.svg",
+    "resource": "VLC-redesign-browser-forward.svg",
+    "role": "browser-forward",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "54fdc.svg",
+    "resource": "VLC-redesign-browser-more.svg",
+    "role": "browser-more",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "6dd1e.svg",
+    "resource": "VLC-redesign-browser-expand.svg",
+    "role": "browser-expand",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "c1afe.svg",
+    "resource": "VLC-redesign-browser-sort.svg",
+    "role": "browser-sort",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "fcd8d.svg",
+    "resource": "VLC-redesign-browser-view.svg",
+    "role": "browser-view",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "80d5a.svg",
+    "resource": "VLC-redesign-browser-search.svg",
+    "role": "browser-search",
+    "theme": "dark"
+  },
+  {
+    "screen": "848:1997",
+    "asset": "3d399.svg",
+    "resource": "VLC-redesign-browser-divider.svg",
+    "role": "browser-divider",
+    "theme": "dark"
+  },
+  {
+    "screen": "858:5001",
+    "asset": "018cc.svg",
+    "resource": "VLC-redesign-browser-songs.svg",
+    "role": "browser-songs",
+    "theme": "dark",
+    "variable": "Original cached Figma SVG; matched against screen screenshot"
+  },
+  {
+    "screen": "858:5001",
+    "asset": "beb21.svg",
+    "resource": "VLC-redesign-browser-albums.svg",
+    "role": "browser-albums",
+    "theme": "dark",
+    "variable": "Original cached Figma SVG; matched against screen screenshot"
+  },
+  {
+    "screen": "858:5001",
+    "asset": "7bb62.svg",
+    "resource": "VLC-redesign-browser-artists.svg",
+    "role": "browser-artists",
+    "theme": "dark",
+    "variable": "Original cached Figma SVG; matched against screen screenshot"
+  },
+  {
+    "screen": "858:5001",
+    "asset": "66b4e.svg",
+    "resource": "VLC-redesign-browser-genres.svg",
+    "role": "browser-genres",
+    "theme": "dark"
+  },
+  {
+    "screen": "858:3290",
+    "asset": "53e54.svg",
+    "resource": "VLC-redesign-browser-list-view.svg",
+    "role": "browser-list-view",
+    "theme": "dark"
+  },
+  {
+    "screen": "187:328",
+    "asset": "94de0.svg",
+    "resource": "VLC-redesign-player-active-sidebar.svg",
+    "role": "active-sidebar",
+    "theme": "dark",
+    "variable": "imgFrame25"
   }
 ]

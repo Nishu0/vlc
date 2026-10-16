@@ -28,3 +28,11 @@ See doc/redesign/player-assets.json for all resource/source mappings.
 Queue, bookmark and chapter panel assets are from 491:1781, 6320:13763,
 and 6321:14024. Active player-tool assets retain the source exports from
 491:1781, 496:2495, 491:2216, and 763:1958. All exports remain unchanged.
+
+Compact browser: 848:1995, 848:1997, 858:5001, 858:5294, 858:3290,
+and the expanded player 187:328. Export wrapper reflections are applied by
+native drawing; SVG contents are unchanged. The music rail uses the cached
+music export from 4767:23726 because 848:1870's code/SVG returns a settings
+gear while its screenshot depicts music. The active sidebar uses 187:328's
+imgFrame25 (94de0.svg), not its menu imgFrame50. Source mappings are in the
+player asset manifest; runtime resources never use expiring Figma URLs.

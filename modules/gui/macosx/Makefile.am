@@ -112,6 +112,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignPanelButton.m \
 	gui/macosx/redesign/VLCRedesignQueuePanel.h \
 	gui/macosx/redesign/VLCRedesignQueuePanel.m \
+	gui/macosx/redesign/VLCRedesignCompactBrowser.h \
+	gui/macosx/redesign/VLCRedesignCompactBrowser.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \
@@ -731,6 +733,32 @@ libmacosx_plugin_la_RES = \
 	gui/macosx/Resources/redesign/VLC-redesign-player-active-audio.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-player-active-subtitles.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-player-active-settings.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-active-sidebar.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-home.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-videos.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-videos-active.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-music.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-music-active.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-network.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-network-active.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-playlists.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-playlists-active.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-recent.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-add.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-folder.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-back.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-forward.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-more.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-expand.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-sort.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-view.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-search.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-divider.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-songs.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-albums.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-artists.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-genres.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-list-view.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-video.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-audio.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-off.svg \

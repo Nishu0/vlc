@@ -9,6 +9,12 @@
 #import "VLCRedesignTextLayout.h"
 #import "VLCRedesignTrackPanel.h"
 #import "VLCRedesignQueuePanel.h"
+#import "VLCRedesignCompactBrowser.h"
+#import "library/VLCLibrarySegment.h"
+#import "library/media-source/VLCLibraryMediaSourceViewController.h"
+#import "library/media-source/VLCMediaSourceBaseDataSource.h"
+#import "library/media-source/VLCMediaSourceDataSource.h"
+#import "library/media-source/VLCMediaSource.h"
 #import "extensions/NSString+Helpers.h"
 #import "library/VLCInputItem.h"
 #import "library/VLCLibraryWindow.h"
@@ -64,7 +70,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 }
 - (void)drawRect:(NSRect)dirtyRect
 {
-    BOOL hasActiveIcon = [@[@"queue",@"audio",@"subtitles",@"settings"] containsObject:self.assetRole];
+    BOOL hasActiveIcon = [@[@"queue",@"audio",@"subtitles",@"settings",@"sidebar"] containsObject:self.assetRole];
     if (self.transport || self.highlighted || (self.selected && !hasActiveIcon)) {
         NSColor *color = self.transport ? (self.playing ? [VLCRedesignAppearance colorWithRGB:0x6B6B6B] : VLCRedesignAppearance.accentColor) : VLCRedesignAppearance.borderColor;
         [color setFill];
@@ -84,6 +90,26 @@ static NSImage *VLCPlayerAsset(NSString *role)
     }
 }
 - (NSEdgeInsets)alignmentRectInsets { return NSEdgeInsetsMake(0, 0, 0, 0); }
+@end
+
+@interface VLCPlayerFolderButton : NSButton
+@end
+@implementation VLCPlayerFolderButton
+- (void)drawRect:(NSRect)dirtyRect
+{
+    NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
+    style.lineBreakMode = NSLineBreakByTruncatingMiddle;
+    NSAttributedString *text = [[NSAttributedString alloc] initWithString:self.title attributes:@{
+        NSFontAttributeName:[VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular],
+        NSForegroundColorAttributeName:VLCRedesignAppearance.subduedColor,
+        NSParagraphStyleAttributeName:style
+    }];
+    VLCDrawAlignedText(text,self.bounds,self.flipped,NSTextAlignmentLeft);
+    if (self.window.firstResponder == self) {
+        [VLCRedesignAppearance.accentColor setStroke];
+        [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(self.bounds,1,1) xRadius:4 yRadius:4] stroke];
+    }
+}
 @end
 
 @interface VLCPlayerTimeButton : NSButton
@@ -240,7 +266,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
 @property NSImageView *logo;
 @property NSImageView *divider;
 @property VLCRedesignAlignedLabel *titleLabel;
-@property VLCRedesignAlignedLabel *folderLabel;
+@property VLCPlayerFolderButton *folderLabel;
+@property VLCRedesignCompactBrowser *browser;
 @property VLCPlayerTimeButton *elapsedButton;
 @property VLCPlayerTimeButton *durationButton;
 @property VLCPlayerSeekSlider *seekSlider;
@@ -272,12 +299,13 @@ static NSImage *VLCPlayerAsset(NSString *role)
     [_topBar addSubview:_logo];
     [_topBar addSubview:_divider];
     _titleLabel = [self label:@"VLC Media Player" size:14 alignment:NSTextAlignmentCenter];
-    _folderLabel = [self label:@"" size:14 alignment:NSTextAlignmentLeft];
+    _folderLabel = [[VLCPlayerFolderButton alloc] init];
+    _folderLabel.bordered = NO; _folderLabel.title = @""; _folderLabel.target = self; _folderLabel.action = @selector(openFolder:);
     [_topBar addSubview:_titleLabel];
     [_topBar addSubview:_folderLabel];
     _menuButton = [self button:@"menu" label:_NS("Player menu") action:@selector(openMainMenu:) parent:_topBar];
-    _browserButton = [self button:@"sidebar" label:_NS("Show library") action:@selector(openLibrary:) parent:_topBar];
-    _folderButton = [self button:@"folder" label:_NS("Open containing folder") action:@selector(openFolder:) parent:_topBar];
+    _browserButton = [self button:@"sidebar" label:_NS("Toggle compact library") action:@selector(toggleBrowser:) parent:_topBar];
+    _folderButton = [self button:@"folder" label:_NS("Browse containing folder") action:@selector(openFolder:) parent:_topBar];
     _minimizeButton = [self button:@"minimize" label:_NS("Minimize") action:@selector(minimize:) parent:_topBar];
     _maximizeButton = [self button:@"maximize" label:_NS("Zoom window") action:@selector(zoom:) parent:_topBar];
     _fullscreenButton = [self button:@"fullscreen" label:_NS("Enter fullscreen") action:@selector(fullscreen:) parent:_topBar];
@@ -369,7 +397,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
     [videoView removeFromSuperview];
     videoView.translatesAutoresizingMaskIntoConstraints = YES;
     videoView.autoresizingMask = NSViewNotSizable;
-    [self addSubview:videoView positioned:NSWindowBelow relativeTo:_topBar];
+    [self addSubview:videoView positioned:NSWindowBelow relativeTo:_browser ?: _topBar];
     _videoContainer = videoView;
     self.needsLayout = YES;
 }
@@ -383,8 +411,11 @@ static NSImage *VLCPlayerAsset(NSString *role)
     _topBar.frame = NSMakeRect(0, 0, width, 40);
     _bottomBar.frame = NSMakeRect(0, MAX(40, height-barHeight), width, barHeight);
     BOOL fullscreen = self.player.fullscreen;
+    CGFloat browserWidth = _browser && !_browser.hidden ? MIN(427,MAX(280,width*.42)) : 0;
+    if (_browser) _browser.frame = NSMakeRect(0,40,MIN(width,browserWidth),MAX(0,height-40-barHeight));
     if (_videoContainer.superview == self) {
-        _videoContainer.frame = fullscreen ? self.bounds : NSMakeRect(10, 40, MAX(0,width-20), MAX(0,height-40-barHeight));
+        CGFloat videoX = browserWidth > 0 ? browserWidth : 10;
+        _videoContainer.frame = fullscreen ? self.bounds : NSMakeRect(videoX, 40, MAX(0,width-videoX-10), MAX(0,height-40-barHeight));
         _videoContainer.wantsLayer = YES;
         _videoContainer.layer.cornerRadius = fullscreen ? 0 : 12;
         _videoContainer.layer.masksToBounds = YES;
@@ -463,7 +494,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
     VLCPlayQueueController *queue = VLCMain.sharedInstance.playQueueController;
     self.layer.backgroundColor = VLCRedesignAppearance.panelColor.CGColor;
     _topBar.layer.backgroundColor = _bottomBar.layer.backgroundColor = VLCRedesignAppearance.panelColor.CGColor;
-    _titleLabel.textColor = _folderLabel.textColor = VLCRedesignAppearance.subduedColor;
+    _titleLabel.textColor = VLCRedesignAppearance.subduedColor;
+    _folderLabel.needsDisplay = YES;
     for (VLCPlayerIconButton *button in self.buttons) {
         button.image = VLCPlayerAsset(button.assetRole);
         button.needsDisplay = YES;
@@ -472,8 +504,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
     _divider.image = VLCPlayerAsset(@"divider");
     _titleLabel.stringValue = player.currentMedia.name ?: @"VLC Media Player";
     NSURL *url = player.URLOfCurrentMediaItem;
-    _folderLabel.stringValue = url.isFileURL ? url.URLByDeletingLastPathComponent.lastPathComponent : _NS("Library");
-    _folderButton.enabled = url.isFileURL;
+    _folderLabel.title = url.isFileURL ? url.URLByDeletingLastPathComponent.lastPathComponent : _NS("Library");
+    _folderButton.enabled = _folderLabel.enabled = url.isFileURL;
     _folderButton.toolTip = url.isFileURL ? url.URLByDeletingLastPathComponent.path : _NS("No local media folder");
     _playButton.playing = player.playerState == VLC_PLAYER_STATE_PLAYING;
     _playButton.toolTip = _playButton.accessibilityLabel = _playButton.playing ? _NS("Pause") : _NS("Play");
@@ -494,7 +526,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 - (BOOL)mouseOnControls
 {
     NSPoint point = [self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:nil];
-    return NSPointInRect(point,_topBar.frame) || NSPointInRect(point,_bottomBar.frame) || self.menuOpen || self.trackPanel != nil || self.queuePanel != nil;
+    return NSPointInRect(point,_topBar.frame) || NSPointInRect(point,_bottomBar.frame) || self.menuOpen || self.trackPanel != nil || self.queuePanel != nil || (self.browser && !self.browser.hidden);
 }
 - (void)updateVisibility
 {
@@ -502,10 +534,12 @@ static NSImage *VLCPlayerAsset(NSString *role)
     NSPoint point = [self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:nil];
     BOOL fullscreen = self.player.fullscreen;
     BOOL inside = NSPointInRect(point,self.bounds);
+    BOOL browserSelected = self.browser && !self.browser.hidden;
+    if (_browserButton.selected != browserSelected) { _browserButton.selected = browserSelected; _browserButton.needsDisplay = YES; }
     BOOL queueSelected = self.queuePanel != nil;
     if (_queueButton.selected != queueSelected) { _queueButton.selected = queueSelected; _queueButton.needsDisplay = YES; }
-    _topBar.hidden = fullscreen && !self.menuOpen && !self.trackPanel && !self.queuePanel && !(inside && point.y < 56);
-    _bottomBar.hidden = fullscreen && !self.menuOpen && !self.trackPanel && !self.queuePanel && !(inside && point.y > NSHeight(self.bounds)-NSHeight(_bottomBar.frame)-16);
+    _topBar.hidden = fullscreen && !browserSelected && !self.menuOpen && !self.trackPanel && !self.queuePanel && !(inside && point.y < 56);
+    _bottomBar.hidden = fullscreen && !browserSelected && !self.menuOpen && !self.trackPanel && !self.queuePanel && !(inside && point.y > NSHeight(self.bounds)-NSHeight(_bottomBar.frame)-16);
 }
 
 #pragma mark - Real player and window actions
@@ -545,10 +579,49 @@ static NSImage *VLCPlayerAsset(NSString *role)
     [self updateVisibility];
 }
 - (void)openLibrary:(id)sender { [self.videoController returnToLibrary:sender]; }
+- (void)ensureBrowser
+{
+    if (_browser) return;
+    _browser = [[VLCRedesignCompactBrowser alloc] init];
+    __weak typeof(self) weakSelf = self;
+    _browser.expandLibrary = ^(NSURL *folder, NSInteger section, BOOL grid) {
+        [weakSelf expandLibraryFolder:folder section:section grid:grid];
+    };
+    _browser.openNetworkSource = ^(VLCMediaSource *source) {
+        typeof(self) strongSelf = weakSelf; if (!strongSelf) return;
+        [strongSelf expandLibraryFolder:nil section:3 grid:NO];
+        VLCLibraryMediaSourceViewController *controller = (id)VLCMain.sharedInstance.libraryWindow.librarySegmentViewController;
+        if (![controller isKindOfClass:VLCLibraryMediaSourceViewController.class]) return;
+        [controller.baseDataSource configureChildDataSourceWithNode:source.rootNode andMediaSource:source];
+    };
+    [self addSubview:_browser positioned:NSWindowBelow relativeTo:_topBar];
+}
+- (void)toggleBrowser:(id)sender
+{
+    BOOL firstOpen = !_browser;
+    [self ensureBrowser];
+    _browser.hidden = !firstOpen && !_browser.hidden;
+    if (firstOpen) {
+        NSURL *url = self.player.URLOfCurrentMediaItem;
+        if (url.isFileURL) [_browser browseFolder:url.URLByDeletingLastPathComponent];
+    }
+    self.needsLayout = YES; [self updateVisibility];
+}
+- (void)expandLibraryFolder:(NSURL *)folder section:(NSInteger)section grid:(BOOL)grid
+{
+    [self closePlayerPanels];
+    [self.videoController returnToLibrary:self];
+    VLCLibraryWindow *window = VLCMain.sharedInstance.libraryWindow;
+    const NSInteger segments[] = {VLCLibraryHomeSegmentType,VLCLibraryVideoSegmentType,VLCLibraryMusicSegmentType,VLCLibraryStreamsSegmentType,VLCLibraryPlaylistsSegmentType,VLCLibraryHomeSegmentType};
+    window.librarySegmentType = segments[MAX(0,MIN(5,section))];
+    if (folder.isFileURL) [window browseFolderByMrl:folder.absoluteString];
+    window.gridVsListSegmentedControl.selectedSegment = grid ? VLCLibraryGridViewModeSegment : VLCLibraryListViewModeSegment;
+    [window gridVsListSegmentedControlAction:window.gridVsListSegmentedControl];
+}
 - (void)openFolder:(id)sender
 {
     NSURL *url = self.player.URLOfCurrentMediaItem;
-    if (url.isFileURL) [NSWorkspace.sharedWorkspace activateFileViewerSelectingURLs:@[url]];
+    if (url.isFileURL) [self expandLibraryFolder:url.URLByDeletingLastPathComponent section:1 grid:NO];
 }
 - (void)showMenu:(NSMenu *)menu sender:(NSView *)sender
 {
@@ -583,7 +656,13 @@ static NSImage *VLCPlayerAsset(NSString *role)
             NSPoint point = [strongSelf convertPoint:event.locationInWindow fromView:nil];
             NSPoint bottom = [strongSelf.bottomBar convertPoint:event.locationInWindow fromView:nil];
             BOOL tool = NSPointInRect(bottom,strongSelf.audioButton.frame) || NSPointInRect(bottom,strongSelf.subtitlesButton.frame) || NSPointInRect(bottom,strongSelf.queueButton.frame);
-            if (panel && !NSPointInRect(point,panel.frame) && !tool) [strongSelf closePlayerPanels];
+            NSPoint browserPoint = [strongSelf.browser convertPoint:event.locationInWindow fromView:nil];
+            BOOL inBrowser = strongSelf.browser && !strongSelf.browser.hidden && NSPointInRect(browserPoint,strongSelf.browser.bounds);
+            /* Browsing and queueing are a paired workflow. Keep the queue
+             * available until Escape or its tool button closes it. */
+            BOOL browsingIntoQueue = strongSelf.queuePanel && strongSelf.browser && !strongSelf.browser.hidden;
+            if (panel && !browsingIntoQueue && !NSPointInRect(point,panel.frame) && !tool && !inBrowser)
+                [strongSelf closePlayerPanels];
         }
         return event;
     }];
