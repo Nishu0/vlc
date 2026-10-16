@@ -79,3 +79,13 @@ Baseline gate passed before any redesign application-code edits. The baseline ap
 ## First redesign slice
 
 Native onboarding and appearance changes compile and package through the same configured build tree. The latest logs are `redesign-text-audit-make-final.log` and `redesign-text-audit-package-final.log`. See [onboarding verification and scope](onboarding-status.md). The working `build-macos-baseline/VLC.app` now contains these changes; it is distinct from the preserved unchanged baseline under `artifacts/macos-baseline/`.
+
+## Native player preview, October 17
+
+The source at `a835ba0a9e60f31317c812387a2ec37367a836e0` completes another player milestone: responsive native chrome, direct track/device selectors, Queue / Bookmarks / Chapters, compact browser, and clipped seek redraws during live resizing. See [player scope and acceptance](player-status.md) for the remaining work. This is a partial redesign.
+
+The full build and packaging ran through `resume-build.sh redesign-player-browser-final`. Both the packaged app and staged copy pass `codesign --verify --deep --strict`; they contain 390 plugins. The Apple Silicon executable SHA-256 is `975532e8dc4192bfc22f94f84f02fb356cc7596645f9aa1969b6167ec135d4f4`, and the native macOS plugin SHA-256 is `a0aa51dec49afa8883ae9df5e71bf85958f9c712c208f073f9779a3f39875245`. This is local ad-hoc signing, without Developer ID signing or notarization.
+
+Local deliverables are `build-macos-baseline/artifacts/macos-player-preview-a835ba0a9e/VLC.app` and `build-macos-baseline/artifacts/VLC-player-preview-arm64.dmg`. The disk image passes `hdiutil verify` with CRC32 `FC04BFFE`. The staged folder contains a machine-readable verification record and scope README. Earlier previews and the unchanged baseline app remain in their separate folders. User media, test media and library databases are not bundled.
+
+The staged app was launched by its own executable path, outside the working `VLC.app` build copy, with the supplied local MKV. Actual video and English subtitles rendered, and the selector exposed all 19 embedded subtitle tracks. Live resize checks at 802 and 604 points retained the duration; a pointer click sought to 1:30 after resizing. Full-library expansion opened the same fixture folder with playback still at 1:30. Cross-panel pointer-drop completion, network-source contents, fullscreen edge-hover and PiP return remain acceptance work. The four-tab inspector, seek thumbnails, complete library redesign and Windows port are still pending.
