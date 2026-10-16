@@ -58,7 +58,9 @@
     }
 
     NSArray<VLCOpenInputMetadata *> *metadata = [self inputMetadataFromPasteboard:pasteboard];
-    if (metadata.count == 0) return NO;
+    if (metadata.count == 0) {
+        return NO;
+    }
     [VLCMain.sharedInstance.playQueueController addPlayQueueItems:metadata];
     return YES;
 }
@@ -101,7 +103,7 @@
     }
 
     const id propertyList = [pasteboard propertyListForType:NSFilenamesPboardType];
-    if (propertyList == nil) {
+    if (![propertyList isKindOfClass:NSArray.class]) {
         return @[];
     }
 
@@ -113,7 +115,11 @@
 
     NSMutableArray * const metadataArray = [NSMutableArray arrayWithCapacity:valueCount];
 
-    for (NSString * const filepath in values) {
+    for (id const value in values) {
+        if (![value isKindOfClass:NSString.class] || ![value isAbsolutePath]) {
+            continue;
+        }
+        NSString * const filepath = value;
         VLCOpenInputMetadata * const inputMetadata = [VLCOpenInputMetadata inputMetaWithPath:filepath];
         if (inputMetadata != nil) {
             [metadataArray addObject:inputMetadata];

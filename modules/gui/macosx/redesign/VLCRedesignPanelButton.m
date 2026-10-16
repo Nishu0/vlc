@@ -9,16 +9,20 @@
 
 NSImage *VLCRedesignPanelImage(NSString *name)
 {
-    static NSMutableDictionary<NSString *, NSImage *> *cache;
+    static NSCache<NSString *, NSImage *> *cache;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
-        cache = [NSMutableDictionary dictionary];
+        cache = [[NSCache alloc] init];
+        cache.countLimit = 256;
     });
-    NSImage *image = cache[name];
+    NSImage *image = [cache objectForKey:name];
     if (!image) {
-        image = [[NSImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:name ofType:@"svg"]];
+        NSString *path = [NSBundle.mainBundle pathForResource:name ofType:@"svg"];
+        if (!path)
+            return nil;
+        image = [[NSImage alloc] initWithContentsOfFile:path];
         if (image)
-            cache[name] = image;
+            [cache setObject:image forKey:name];
     }
     return image;
 }

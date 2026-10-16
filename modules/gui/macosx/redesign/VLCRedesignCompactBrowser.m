@@ -190,6 +190,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 @interface VLCBrowserCell : NSTableCellView
 @property VLCBrowserArtwork *artwork;
 @property NSURL *representedURL;
+@property NSDictionary *representedEntry;
 @end
 @implementation VLCBrowserCell
 
@@ -257,6 +258,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 @interface VLCBrowserGridItem : NSCollectionViewItem
 @property VLCBrowserArtwork *artwork;
 @property NSURL *representedURL;
+@property NSDictionary *representedEntry;
 @property (copy) void (^activate)(void);
 @end
 @implementation VLCBrowserGridItem
@@ -399,6 +401,124 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 @end
 
+static NSArray<VLCMediaLibraryPlaylist *> *VLCBrowserFetchPlaylists(vlc_medialibrary_t *library)
+{
+    if (!library)
+        return @[];
+    vlc_ml_playlist_list_t *list = vlc_ml_list_playlists(library, NULL, VLC_ML_PLAYLIST_TYPE_ALL);
+    if (!list)
+        return @[];
+    NSMutableArray<VLCMediaLibraryPlaylist *> *items = [NSMutableArray arrayWithCapacity:list->i_nb_items];
+    for (size_t i = 0; i < list->i_nb_items; i++) {
+        VLCMediaLibraryPlaylist *item = [[VLCMediaLibraryPlaylist alloc] initWithPlaylist:&list->p_items[i]];
+        if (item)
+            [items addObject:item];
+    }
+    vlc_ml_playlist_list_release(list);
+    return items.copy;
+}
+
+static NSArray<VLCMediaLibraryMediaItem *> *
+VLCBrowserFetchGroupMedia(vlc_medialibrary_t *library, VLCMediaLibraryParentGroupType groupType, int64_t groupID)
+{
+    if (!library || groupID <= 0 || groupType == VLCMediaLibraryParentGroupTypeUnknown)
+        return @[];
+    vlc_ml_media_list_t *list = vlc_ml_list_media_of(library, NULL, groupType, groupID);
+    if (!list)
+        return @[];
+    NSMutableArray<VLCMediaLibraryMediaItem *> *items = [NSMutableArray arrayWithCapacity:list->i_nb_items];
+    for (size_t i = 0; i < list->i_nb_items; i++) {
+        VLCMediaLibraryMediaItem *item = [[VLCMediaLibraryMediaItem alloc] initWithMediaItem:&list->p_items[i]];
+        if (item)
+            [items addObject:item];
+    }
+    vlc_ml_media_list_release(list);
+    return items.copy;
+}
+
+typedef NS_ENUM(NSInteger, VLCBrowserMode) {
+    VLCBrowserModeFolders,
+    VLCBrowserModeDirectory,
+    VLCBrowserModeMusic,
+    VLCBrowserModeSongs,
+    VLCBrowserModeAlbums,
+    VLCBrowserModeArtists,
+    VLCBrowserModeGenres,
+    VLCBrowserModeNetwork,
+    VLCBrowserModePlaylists,
+    VLCBrowserModeGroup,
+    VLCBrowserModeRecent,
+};
+
+typedef NS_ENUM(NSInteger, VLCBrowserSortMode) {
+    VLCBrowserSortNameAscending,
+    VLCBrowserSortNameDescending,
+    VLCBrowserSortModificationDate,
+    VLCBrowserSortUnwatchedFirst,
+    VLCBrowserSortWatchedFirst,
+};
+
+/* Navigation snapshots are immutable so a background load cannot observe
+ * fields from a different history entry halfway through a query. */
+@interface VLCBrowserLocation : NSObject
+@property (nonatomic, readonly) VLCRedesignBrowserSection section;
+@property (nonatomic, readonly) VLCBrowserMode mode;
+@property (nonatomic, readonly, copy) NSString *title;
+@property (nonatomic, readonly) NSURL *folderURL;
+@property (nonatomic, readonly) id<VLCMediaLibraryItemProtocol> libraryItem;
+- (instancetype)initWithSection:(VLCRedesignBrowserSection)section
+                           mode:(VLCBrowserMode)mode
+                          title:(NSString *)title
+                      folderURL:(NSURL *)folderURL
+                    libraryItem:(id<VLCMediaLibraryItemProtocol>)libraryItem;
+@end
+
+@implementation VLCBrowserLocation
+
+- (instancetype)initWithSection:(VLCRedesignBrowserSection)section
+                           mode:(VLCBrowserMode)mode
+                          title:(NSString *)title
+                      folderURL:(NSURL *)folderURL
+                    libraryItem:(id<VLCMediaLibraryItemProtocol>)libraryItem
+{
+    self = [super init];
+    if (self) {
+        _section = section;
+        _mode = mode;
+        _title = [title copy];
+        _folderURL = [folderURL copy];
+        _libraryItem = libraryItem;
+    }
+    return self;
+}
+
+@end
+
+static BOOL VLCBrowserModeShowsGroups(VLCBrowserMode mode)
+{
+    return mode == VLCBrowserModeAlbums || mode == VLCBrowserModeArtists || mode == VLCBrowserModeGenres;
+}
+
+static BOOL VLCBrowserModeAllowsAdding(VLCBrowserMode mode)
+{
+    return mode == VLCBrowserModeFolders || mode == VLCBrowserModeMusic || mode == VLCBrowserModeNetwork ||
+           mode == VLCBrowserModePlaylists;
+}
+
+static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
+{
+    switch (mode) {
+    case VLCBrowserModeAlbums:
+        return @"albums";
+    case VLCBrowserModeArtists:
+        return @"artists";
+    case VLCBrowserModeGenres:
+        return @"genres";
+    default:
+        return nil;
+    }
+}
+
 @interface VLCRedesignCompactBrowser () <NSTableViewDataSource, NSTableViewDelegate, NSCollectionViewDataSource,
                                          NSCollectionViewDelegate, NSMenuDelegate, NSTextFieldDelegate>
 @property NSView *rail;
@@ -421,14 +541,14 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 @property NSCollectionViewFlowLayout *gridLayout;
 @property NSArray<NSDictionary *> *rawEntries;
 @property NSArray<NSDictionary *> *entries;
-@property NSMutableArray<NSDictionary *> *history;
+@property NSMutableArray<VLCBrowserLocation *> *history;
 @property NSInteger historyIndex;
 @property (atomic) NSUInteger generation;
 @property dispatch_queue_t loadQueue;
 @property dispatch_source_t directoryWatch;
 @property NSCache<NSString *, NSImage *> *artworkCache;
 @property NSMutableDictionary<NSString *, NSMutableArray *> *pendingArtwork;
-@property NSInteger sortMode;
+@property VLCBrowserSortMode sortMode;
 @property BOOL gridMode;
 @property BOOL searchOpen;
 @property NSString *loadError;
@@ -457,14 +577,14 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     return VLCMain.sharedInstance.libraryController.libraryModel;
 }
 
-- (NSDictionary *)state
+- (VLCBrowserLocation *)state
 {
     return _history[_historyIndex];
 }
 
 - (NSURL *)currentFolderURL
 {
-    return self.state[@"url"];
+    return self.state.folderURL;
 }
 
 - (instancetype)init
@@ -472,8 +592,34 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     self = [super initWithFrame:NSZeroRect];
     if (!self)
         return nil;
+
     self.wantsLayer = YES;
     self.layer.backgroundColor = [[VLCRedesignAppearance colorWithRGB:0x0E0E0E] colorWithAlphaComponent:.95].CGColor;
+    _history =
+        [NSMutableArray arrayWithObject:[[VLCBrowserLocation alloc] initWithSection:VLCRedesignBrowserSectionVideos
+                                                                               mode:VLCBrowserModeFolders
+                                                                              title:_NS("Videos")
+                                                                          folderURL:nil
+                                                                        libraryItem:nil]];
+    _loadQueue = dispatch_queue_create("org.videolan.redesign.browser", DISPATCH_QUEUE_SERIAL);
+    _artworkCache = [[NSCache alloc] init];
+    _artworkCache.countLimit = 128;
+    _artworkCache.totalCostLimit = 16 * 1024 * 1024;
+    _pendingArtwork = [NSMutableDictionary dictionary];
+    _gridMode = [NSUserDefaults.standardUserDefaults boolForKey:@"VLCRedesignCompactGrid"];
+    _rawEntries = _entries = @[];
+    [self setupRail];
+    [self setupNavigationControls];
+    [self setupSearchField];
+    [self setupMediaViews];
+    [self setupNotifications];
+    return self;
+}
+
+#pragma mark - Setup
+
+- (void)setupRail
+{
     _rail = [[VLCBrowserSurface alloc] init];
     _rail.wantsLayer = YES;
     _rail.layer.backgroundColor = [VLCRedesignAppearance colorWithRGB:0x191919].CGColor;
@@ -490,11 +636,16 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
                                               label:names[i]
                                              parent:_rail
                                              action:^{
-                                                 [weakSelf selectSection:i];
+                                                 [weakSelf selectSection:(VLCRedesignBrowserSection)i];
                                              }];
         [rail addObject:button];
     }
     _railButtons = rail;
+}
+
+- (void)setupNavigationControls
+{
+    __weak typeof(self) weakSelf = self;
     _backButton = [self icon:@"back"
                        label:_NS("Back")
                       parent:self
@@ -556,6 +707,10 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     _divider.image = VLCBrowserAsset(@"divider");
     _divider.imageScaling = NSImageScaleNone;
     [self addSubview:_divider];
+}
+
+- (void)setupSearchField
+{
     _searchField = [[NSTextField alloc] init];
     _searchField.cell = [[VLCRedesignAlignedTextFieldCell alloc] initTextCell:@""];
     _searchField.editable = YES;
@@ -574,6 +729,11 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     _searchField.layer.cornerRadius = 4;
     _searchField.layer.masksToBounds = YES;
     [self addSubview:_searchField];
+}
+
+- (void)setupMediaViews
+{
+    __weak typeof(self) weakSelf = self;
     _scroll = [[NSScrollView alloc] init];
     _scroll.drawsBackground = NO;
     _scroll.hasVerticalScroller = YES;
@@ -621,14 +781,11 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     NSMenu *menu = [[NSMenu alloc] init];
     menu.delegate = self;
     _table.menu = _grid.menu = menu;
-    _history = [NSMutableArray arrayWithObject:@{@"section" : @1, @"mode" : @"folders", @"name" : _NS("Videos")}];
-    _loadQueue = dispatch_queue_create("org.videolan.redesign.browser", DISPATCH_QUEUE_SERIAL);
-    _artworkCache = [[NSCache alloc] init];
-    _artworkCache.countLimit = 128;
-    _artworkCache.totalCostLimit = 16 * 1024 * 1024;
-    _pendingArtwork = [NSMutableDictionary dictionary];
-    _gridMode = [NSUserDefaults.standardUserDefaults boolForKey:@"VLCRedesignCompactGrid"];
     _scroll.documentView = _gridMode ? _grid : _table;
+}
+
+- (void)setupNotifications
+{
     for (NSString *name in @[
              VLCLibraryModelListOfMonitoredFoldersUpdated, VLCLibraryModelAudioMediaListReset,
              VLCLibraryModelRecentsMediaListReset, VLCLibraryModelArtistListReset, VLCLibraryModelAlbumListReset,
@@ -644,9 +801,9 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
                                            selector:@selector(closePopupNotification:)
                                                name:NSApplicationDidResignActiveNotification
                                              object:nil];
-    [self reload];
-    return self;
 }
+
+#pragma mark - Lifetime
 
 - (void)dealloc
 {
@@ -659,25 +816,47 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     [_viewPopup orderOut:nil];
 }
 
+- (void)stopDirectoryWatch
+{
+    if (_directoryWatch) {
+        dispatch_source_cancel(_directoryWatch);
+        _directoryWatch = nil;
+    }
+}
+
+- (void)suspendBrowsing
+{
+    ++self.generation;
+    [self stopDirectoryWatch];
+    [self closePopup];
+}
+
 - (void)setHidden:(BOOL)hidden
 {
+    if (self.hidden == hidden)
+        return;
     [super setHidden:hidden];
-    if (hidden) {
-        [self closePopup];
-        if (_directoryWatch) {
-            dispatch_source_cancel(_directoryWatch);
-            _directoryWatch = nil;
-        }
-    } else if (_history)
+    if (hidden)
+        [self suspendBrowsing];
+    else if (self.window)
         [self reload];
 }
 
 - (void)viewWillMoveToWindow:(NSWindow *)window
 {
     if (!window)
-        [self closePopup];
+        [self suspendBrowsing];
     [super viewWillMoveToWindow:window];
 }
+
+- (void)viewDidMoveToWindow
+{
+    [super viewDidMoveToWindow];
+    if (self.window && !self.hidden)
+        [self reload];
+}
+
+#pragma mark - Navigation
 
 - (VLCRedesignPanelButton *)icon:(NSString *)role
                            label:(NSString *)label
@@ -694,7 +873,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     return button;
 }
 
-- (void)navigate:(NSDictionary *)state
+- (void)navigate:(VLCBrowserLocation *)state
 {
     [self closePopup];
     if (_historyIndex + 1 < (NSInteger)_history.count)
@@ -715,29 +894,56 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 - (void)browseFolder:(NSURL *)url
 {
-    if (url.isFileURL)
-        [self navigate:@{
-            @"section" : @1,
-            @"mode" : @"directory",
-            @"name" : url.lastPathComponent.length ? url.lastPathComponent : @"/",
-            @"url" : url
-        }];
+    if (!url.isFileURL)
+        return;
+    NSString *title = url.lastPathComponent.length ? url.lastPathComponent : @"/";
+    [self navigate:[[VLCBrowserLocation alloc] initWithSection:VLCRedesignBrowserSectionVideos
+                                                          mode:VLCBrowserModeDirectory
+                                                         title:title
+                                                     folderURL:url
+                                                   libraryItem:nil]];
 }
 
-- (void)selectSection:(NSInteger)section
+- (void)selectSection:(VLCRedesignBrowserSection)section
 {
-    if (section == 0) {
+    VLCBrowserMode mode;
+    NSString *title;
+    switch (section) {
+    case VLCRedesignBrowserSectionHome:
         if (self.expandLibrary)
-            self.expandLibrary(nil, 0, _gridMode);
+            self.expandLibrary(nil, section, _gridMode);
         return;
-    }
-    if (section == 6) {
+    case VLCRedesignBrowserSectionOpenMedia:
         [self addMedia:nil];
         return;
+    case VLCRedesignBrowserSectionVideos:
+        mode = VLCBrowserModeFolders;
+        title = _NS("Videos");
+        break;
+    case VLCRedesignBrowserSectionMusic:
+        mode = VLCBrowserModeMusic;
+        title = _NS("Music");
+        break;
+    case VLCRedesignBrowserSectionNetwork:
+        mode = VLCBrowserModeNetwork;
+        title = _NS("Network");
+        break;
+    case VLCRedesignBrowserSectionPlaylists:
+        mode = VLCBrowserModePlaylists;
+        title = _NS("Playlists");
+        break;
+    case VLCRedesignBrowserSectionRecent:
+        mode = VLCBrowserModeRecent;
+        title = _NS("Recent files");
+        break;
+    default:
+        return;
     }
-    NSArray *modes = @[ @"", @"folders", @"music", @"network", @"playlists", @"recent" ];
-    NSArray *names = @[ @"", _NS("Videos"), _NS("Music"), _NS("Network"), _NS("Playlists"), _NS("Recent files") ];
-    [self navigate:@{@"section" : @(section), @"mode" : modes[section], @"name" : names[section]}];
+    [self navigate:[[VLCBrowserLocation alloc] initWithSection:section
+                                                          mode:mode
+                                                         title:title
+                                                     folderURL:nil
+                                                   libraryItem:nil]];
 }
 
 - (void)moveHistory:(NSInteger)offset
@@ -794,38 +1000,33 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 {
     __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (!weakSelf.hidden)
+        if (weakSelf.window && !weakSelf.hidden)
             [weakSelf reload];
     });
 }
 
 - (void)reload
 {
-    if (!_history)
+    if (!_history || !self.window || self.hidden)
         return;
-    if (_directoryWatch) {
-        dispatch_source_cancel(_directoryWatch);
-        _directoryWatch = nil;
-    }
-    NSDictionary *state = self.state;
-    NSString *mode = state[@"mode"];
-    NSInteger section = [state[@"section"] integerValue];
-    _address.title = state[@"name"] ?: @"";
+    [self stopDirectoryWatch];
+    VLCBrowserLocation *state = self.state;
+    VLCBrowserMode mode = state.mode;
+    VLCRedesignBrowserSection section = state.section;
+    _address.title = state.title ?: @"";
     _address.toolTip = self.currentFolderURL.path ?: _NS("Browse parent folders");
     _backButton.enabled = _historyIndex > 0;
     _forwardButton.enabled = _historyIndex + 1 < (NSInteger)_history.count;
     NSArray *roles = @[ @"home", @"videos", @"music", @"network", @"playlists", @"recent", @"add" ];
     for (NSInteger i = 0; i < 7; i++) {
         NSString *role = roles[i];
-        if (i == section && i >= 1 && i <= 4 && ![mode isEqualToString:@"directory"])
+        if (i == section && i >= 1 && i <= 4 && mode != VLCBrowserModeDirectory)
             role = [role stringByAppendingString:@"-active"];
         _railButtons[i].image = VLCBrowserAsset(role);
         ((VLCBrowserIconButton *)_railButtons[i]).mirrorIcon =
             [@[ @"home", @"videos", @"network", @"recent" ] containsObject:role];
         _railButtons[i].needsDisplay = YES;
     }
-    if (self.folderChanged)
-        self.folderChanged(self.currentFolderURL);
     _counter.stringValue = _NS("Loading…");
     _message.hidden = YES;
     _loadError = nil;
@@ -833,22 +1034,26 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     /* Snapshot cached library lists on the main thread. Filesystem work and
      * sorting stay on a serial background queue, with stale loads discarded. */
     NSArray *snapshot = nil;
-    if ([mode isEqualToString:@"folders"])
+    if (mode == VLCBrowserModeFolders)
         snapshot = self.model.listOfMonitoredFolders.copy;
-    else if ([mode isEqualToString:@"songs"])
+    else if (mode == VLCBrowserModeSongs)
         snapshot = self.model.listOfAudioMedia.copy;
-    else if ([mode isEqualToString:@"albums"])
+    else if (mode == VLCBrowserModeAlbums)
         snapshot = self.model.listOfAlbums.copy;
-    else if ([mode isEqualToString:@"artists"])
+    else if (mode == VLCBrowserModeArtists)
         snapshot = self.model.listOfArtists.copy;
-    else if ([mode isEqualToString:@"genres"])
+    else if (mode == VLCBrowserModeGenres)
         snapshot = self.model.listOfGenres.copy;
-    else if ([mode isEqualToString:@"playlists"])
-        snapshot = [self.model listOfPlaylistsOfType:VLC_ML_PLAYLIST_TYPE_ALL].copy;
-    else if ([mode isEqualToString:@"recent"])
+    else if (mode == VLCBrowserModeRecent)
         snapshot = self.model.listOfRecentMedia.copy;
-    else if ([mode isEqualToString:@"group"])
-        snapshot = ((id<VLCMediaLibraryItemProtocol>)state[@"item"]).mediaItems.copy;
+    id<VLCMediaLibraryItemProtocol> group = state.libraryItem;
+    int64_t groupID = group.libraryID;
+    VLCMediaLibraryParentGroupType groupType = VLCMediaLibraryParentGroupTypeUnknown;
+    if ([group isKindOfClass:VLCMediaLibraryPlaylist.class])
+        groupType = VLCMediaLibraryParentGroupTypePlaylist;
+    else if ([group conformsToProtocol:@protocol(VLCMediaLibraryAudioGroupProtocol)])
+        groupType = ((id<VLCMediaLibraryAudioGroupProtocol>)group).matchingParentType;
+    vlc_medialibrary_t *library = vlc_ml_instance_get(getIntf());
     __weak typeof(self) weakSelf = self;
     dispatch_async(_loadQueue, ^{
         typeof(self) browser = weakSelf;
@@ -856,9 +1061,15 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
             return;
         NSMutableArray<NSDictionary *> *rows = [NSMutableArray array];
         NSError *error = nil;
-        if ([mode isEqualToString:@"directory"]) {
+        NSArray *loadedItems = snapshot;
+        if (mode == VLCBrowserModePlaylists) {
+            loadedItems = VLCBrowserFetchPlaylists(library);
+        } else if (mode == VLCBrowserModeGroup) {
+            loadedItems = VLCBrowserFetchGroupMedia(library, groupType, groupID);
+        }
+        if (mode == VLCBrowserModeDirectory) {
             NSArray<NSURL *> *children = [NSFileManager.defaultManager
-                  contentsOfDirectoryAtURL:state[@"url"]
+                  contentsOfDirectoryAtURL:state.folderURL
                 includingPropertiesForKeys:@[
                     NSURLIsDirectoryKey, NSURLLocalizedNameKey, NSURLContentModificationDateKey
                 ]
@@ -873,18 +1084,20 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
                 if (directory.boolValue || [extensions containsObject:url.pathExtension.lowercaseString])
                     [rows addObject:[browser entryForURL:url directory:directory.boolValue]];
             }
-        } else if ([mode isEqualToString:@"folders"]) {
+        } else if (mode == VLCBrowserModeFolders) {
             for (VLCMediaLibraryEntryPoint *folder in snapshot) {
                 NSURL *url = [NSURL URLWithString:folder.MRL];
                 if (url.isFileURL && !folder.isBanned)
                     [rows addObject:[browser entryForURL:url directory:YES]];
             }
-        } else if ([mode isEqualToString:@"music"]) {
+        } else if (mode == VLCBrowserModeMusic) {
             NSArray *keys = @[ @"songs", @"albums", @"artists", @"genres" ],
                     *names = @[ _NS("Songs"), _NS("Albums"), _NS("Artists"), _NS("Genres") ];
+            const VLCBrowserMode modes[] = {VLCBrowserModeSongs, VLCBrowserModeAlbums, VLCBrowserModeArtists,
+                                            VLCBrowserModeGenres};
             for (NSUInteger i = 0; i < keys.count; i++)
-                [rows addObject:@{@"kind" : @"category", @"mode" : keys[i], @"name" : names[i], @"icon" : keys[i]}];
-        } else if ([mode isEqualToString:@"network"]) {
+                [rows addObject:@{@"kind" : @"category", @"mode" : @(modes[i]), @"name" : names[i], @"icon" : keys[i]}];
+        } else if (mode == VLCBrowserModeNetwork) {
             for (VLCMediaSource *source in [VLCMediaSourceProvider listOfMediaSourcesForCategory:SD_CAT_INTERNET])
                 [rows addObject:@{
                     @"kind" : @"source",
@@ -893,57 +1106,71 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
                     @"icon" : @"network"
                 }];
         } else {
-            BOOL groups = [@[ @"albums", @"artists", @"genres" ] containsObject:mode];
-            for (id<VLCMediaLibraryItemProtocol> item in snapshot) {
+            BOOL groups = VLCBrowserModeShowsGroups(mode);
+            for (id<VLCMediaLibraryItemProtocol> item in loadedItems) {
                 if (browser.generation != generation)
                     return;
-                NSMutableDictionary *entry =
-                    [[browser entryForLibraryItem:item
-                                             kind:[mode isEqualToString:@"playlists"] ? @"playlist"
-                                                  : groups                            ? @"group"
-                                                                                      : @"media"] mutableCopy];
+                NSMutableDictionary *entry = [[browser entryForLibraryItem:item
+                                                                      kind:mode == VLCBrowserModePlaylists ? @"playlist"
+                                                                           : groups                        ? @"group"
+                                                                                    : @"media"] mutableCopy];
                 if (groups)
-                    entry[@"icon"] = mode;
+                    entry[@"icon"] = VLCBrowserGroupIcon(mode);
                 [rows addObject:entry];
             }
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             typeof(self) strongSelf = weakSelf;
-            if (!strongSelf || strongSelf.generation != generation)
+            if (!strongSelf || strongSelf.generation != generation || !strongSelf.window || strongSelf.hidden)
                 return;
             strongSelf.rawEntries = rows;
             strongSelf.loadError = error.localizedDescription;
             [strongSelf applyFilter];
-            if ([mode isEqualToString:@"directory"] && !strongSelf.hidden)
-                [strongSelf watchFolder:state[@"url"]];
+            if (mode == VLCBrowserModeDirectory && !strongSelf.hidden)
+                [strongSelf watchFolder:state.folderURL];
         });
     });
 }
 
 - (void)watchFolder:(NSURL *)url
 {
-    int descriptor = open(url.fileSystemRepresentation, O_EVTONLY | O_CLOEXEC);
-    if (descriptor < 0)
-        return;
-    _directoryWatch = dispatch_source_create(
-        DISPATCH_SOURCE_TYPE_VNODE, descriptor,
-        DISPATCH_VNODE_WRITE | DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME | DISPATCH_VNODE_ATTRIB, _loadQueue);
-    if (!_directoryWatch) {
-        close(descriptor);
-        return;
-    }
+    NSUInteger generation = self.generation;
     __weak typeof(self) weakSelf = self;
-    dispatch_source_set_event_handler(_directoryWatch, ^{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (!weakSelf.hidden)
-                [weakSelf reload];
+    dispatch_async(_loadQueue, ^{
+        /* Opening a watch descriptor may block for a mounted/network folder. */
+        int descriptor = open(url.fileSystemRepresentation, O_EVTONLY | O_CLOEXEC);
+        if (descriptor < 0)
+            return;
+        dispatch_source_t watcher = dispatch_source_create(DISPATCH_SOURCE_TYPE_VNODE, descriptor,
+                                                           DISPATCH_VNODE_WRITE | DISPATCH_VNODE_DELETE |
+                                                               DISPATCH_VNODE_RENAME | DISPATCH_VNODE_ATTRIB,
+                                                           dispatch_get_main_queue());
+        if (!watcher) {
+            close(descriptor);
+            return;
+        }
+        dispatch_source_set_cancel_handler(watcher, ^{
+            close(descriptor);
         });
+        dispatch_source_set_event_handler(watcher, ^{
+            typeof(self) browser = weakSelf;
+            if (browser && browser.generation == generation && browser.window && !browser.hidden)
+                [browser reload];
+        });
+        dispatch_async(dispatch_get_main_queue(), ^{
+            typeof(self) browser = weakSelf;
+            if (!browser || browser.generation != generation || !browser.window || browser.hidden) {
+                dispatch_source_cancel(watcher);
+                return;
+            }
+            [browser stopDirectoryWatch];
+            browser.directoryWatch = watcher;
+        });
+        dispatch_resume(watcher);
     });
-    dispatch_source_set_cancel_handler(_directoryWatch, ^{
-        close(descriptor);
-    });
-    dispatch_resume(_directoryWatch);
 }
+
+#pragma mark - Filtering and actions
 
 - (void)applyFilter
 {
@@ -952,35 +1179,36 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     for (NSDictionary *entry in _rawEntries)
         if (!query.length || [entry[@"name"] localizedStandardContainsString:query])
             [rows addObject:entry];
-    NSInteger sortMode = _sortMode;
-    NSString *mode = self.state[@"mode"];
-    _sortButton.enabled = ![mode isEqualToString:@"music"];
-    if (![mode isEqualToString:@"music"])
+    VLCBrowserSortMode sortMode = _sortMode;
+    VLCBrowserMode mode = self.state.mode;
+    _sortButton.enabled = mode != VLCBrowserModeMusic;
+    if (mode != VLCBrowserModeMusic)
         [rows sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
             if ([a[@"kind"] isEqualToString:@"folder"] != [b[@"kind"] isEqualToString:@"folder"])
                 return [a[@"kind"] isEqualToString:@"folder"] ? NSOrderedAscending : NSOrderedDescending;
-            if (sortMode == 2) {
+            if (sortMode == VLCBrowserSortModificationDate) {
                 NSComparisonResult result =
                     [(b[@"modified"] ?: NSDate.distantPast) compare:(a[@"modified"] ?: NSDate.distantPast)];
                 if (result != NSOrderedSame)
                     return result;
             }
-            if (sortMode == 3 || sortMode == 4) {
+            if (sortMode == VLCBrowserSortUnwatchedFirst || sortMode == VLCBrowserSortWatchedFirst) {
                 NSInteger playedA = [a[@"played"] integerValue] > 0, playedB = [b[@"played"] integerValue] > 0;
                 if (playedA != playedB)
-                    return (playedA < playedB) == (sortMode == 3) ? NSOrderedAscending : NSOrderedDescending;
+                    return (playedA < playedB) == (sortMode == VLCBrowserSortUnwatchedFirst) ? NSOrderedAscending
+                                                                                             : NSOrderedDescending;
             }
             NSComparisonResult result = [a[@"name"] localizedStandardCompare:b[@"name"]];
-            return sortMode == 1 ? -result : result;
+            return sortMode == VLCBrowserSortNameDescending ? -result : result;
         }];
     _counter.stringValue = rows.count == 1 ? _NS("1 item") : [NSString stringWithFormat:_NS("%lu items"), rows.count];
-    BOOL canAdd = [@[ @"folders", @"music", @"network", @"playlists" ] containsObject:mode];
+    BOOL canAdd = VLCBrowserModeAllowsAdding(mode);
     if (canAdd && !query.length)
         [rows insertObject:@{
             @"kind" : @"add",
-            @"name" : [mode isEqualToString:@"network"] ? _NS("Add Network Stream")
-            : [mode isEqualToString:@"playlists"]       ? _NS("Create playlist")
-                                                        : _NS("Add"),
+            @"name" : mode == VLCBrowserModeNetwork ? _NS("Add Network Stream")
+            : mode == VLCBrowserModePlaylists       ? _NS("Create playlist")
+                                                    : _NS("Add"),
             @"icon" : @"add"
         }
                    atIndex:0];
@@ -1032,24 +1260,28 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 - (void)activateEntry:(NSDictionary *)entry
 {
     NSString *kind = entry[@"kind"];
-    if ([kind isEqualToString:@"add"])
+    if ([kind isEqualToString:@"add"]) {
         [self addMedia:nil];
-    else if ([kind isEqualToString:@"folder"])
+    } else if ([kind isEqualToString:@"folder"]) {
         [self browseFolder:entry[@"url"]];
-    else if ([kind isEqualToString:@"category"])
-        [self navigate:@{@"section" : @2, @"mode" : entry[@"mode"], @"name" : entry[@"name"]}];
-    else if ([kind isEqualToString:@"group"] || [kind isEqualToString:@"playlist"])
-        [self navigate:@{
-            @"section" : self.state[@"section"],
-            @"mode" : @"group",
-            @"name" : entry[@"name"],
-            @"item" : entry[@"item"]
-        }];
-    else if ([kind isEqualToString:@"source"]) {
+    } else if ([kind isEqualToString:@"category"]) {
+        [self navigate:[[VLCBrowserLocation alloc] initWithSection:VLCRedesignBrowserSectionMusic
+                                                              mode:(VLCBrowserMode)[entry[@"mode"] integerValue]
+                                                             title:entry[@"name"]
+                                                         folderURL:nil
+                                                       libraryItem:nil]];
+    } else if ([kind isEqualToString:@"group"] || [kind isEqualToString:@"playlist"]) {
+        [self navigate:[[VLCBrowserLocation alloc] initWithSection:self.state.section
+                                                              mode:VLCBrowserModeGroup
+                                                             title:entry[@"name"]
+                                                         folderURL:nil
+                                                       libraryItem:entry[@"item"]]];
+    } else if ([kind isEqualToString:@"source"]) {
         if (self.openNetworkSource)
             self.openNetworkSource(entry[@"source"]);
-    } else
+    } else {
         [self enqueueEntry:entry play:YES];
+    }
 }
 
 - (void)enqueueEntry:(NSDictionary *)entry play:(BOOL)play
@@ -1069,7 +1301,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 - (VLCMediaLibraryPlaylist *)currentPlaylist
 {
-    id item = self.state[@"item"];
+    id item = self.state.libraryItem;
     return [item isKindOfClass:VLCMediaLibraryPlaylist.class] ? item : nil;
 }
 
@@ -1094,12 +1326,12 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 - (void)addMedia:(id)sender
 {
-    NSString *mode = self.state[@"mode"];
-    if ([mode isEqualToString:@"network"]) {
+    VLCBrowserMode mode = self.state.mode;
+    if (mode == VLCBrowserModeNetwork) {
         [VLCMain.sharedInstance.open openNet];
         return;
     }
-    if ([mode isEqualToString:@"playlists"]) {
+    if (mode == VLCBrowserModePlaylists) {
         NSAlert *alert = [[NSAlert alloc] init];
         alert.messageText = _NS("Create playlist");
         [alert addButtonWithTitle:_NS("Create")];
@@ -1132,7 +1364,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     }
     NSOpenPanel *picker = NSOpenPanel.openPanel;
     picker.canChooseDirectories = ![self currentPlaylist];
-    picker.canChooseFiles = ![@[ @"folders", @"music" ] containsObject:mode];
+    picker.canChooseFiles = (mode != VLCBrowserModeFolders && mode != VLCBrowserModeMusic);
     picker.allowsMultipleSelection = YES;
     [picker beginSheetModalForWindow:self.window
                    completionHandler:^(NSModalResponse response) {
@@ -1162,7 +1394,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 {
     [self closePopup];
     if (self.expandLibrary)
-        self.expandLibrary(self.currentFolderURL, [self.state[@"section"] integerValue], _gridMode);
+        self.expandLibrary(self.currentFolderURL, self.state.section, _gridMode);
 }
 
 - (void)showParents:(id)sender
@@ -1216,7 +1448,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 - (void)sort:(NSMenuItem *)sender
 {
-    _sortMode = sender.tag;
+    _sortMode = (VLCBrowserSortMode)sender.tag;
     [self applyFilter];
 }
 
@@ -1405,6 +1637,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     NSDictionary *entry = _entries[row];
     NSURL *url = entry[@"url"];
     cell.representedURL = url;
+    cell.representedEntry = entry;
     cell.textField.stringValue = entry[@"name"];
     cell.textField.toolTip = entry[@"name"];
     __weak VLCBrowserCell *weakCell = cell;
@@ -1412,7 +1645,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
                      entry:entry
                      large:NO
                    changed:^(NSImage *image) {
-                       if ([weakCell.representedURL isEqual:url]) {
+                       if (weakCell.representedEntry == entry) {
                            weakCell.artwork.image = image;
                            weakCell.artwork.needsDisplay = YES;
                        }
@@ -1432,6 +1665,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     NSDictionary *entry = _entries[indexPath.item];
     NSURL *url = entry[@"url"];
     item.representedURL = url;
+    item.representedEntry = entry;
     item.textField.stringValue = entry[@"name"];
     item.textField.toolTip = entry[@"name"];
     __weak typeof(self) weakSelf = self;
@@ -1443,7 +1677,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
                      entry:entry
                      large:YES
                    changed:^(NSImage *image) {
-                       if ([weakItem.representedURL isEqual:url]) {
+                       if (weakItem.representedEntry == entry) {
                            weakItem.artwork.image = image;
                            weakItem.artwork.needsDisplay = YES;
                        }
@@ -1462,7 +1696,6 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    msg_Dbg(getIntf(), "compact browser drag begins at row %ld", row);
     return [self pasteboardForEntry:_entries[row]];
 }
 
@@ -1615,6 +1848,8 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 - (void)progressChanged:(NSNotification *)notification
 {
+    if (!self.window || self.hidden)
+        return;
     NSURL *url = self.queue.playerController.URLOfCurrentMediaItem;
     CGFloat progress = self.queue.playerController.position;
     if (!url)

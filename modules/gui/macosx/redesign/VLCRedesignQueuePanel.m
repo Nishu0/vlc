@@ -360,7 +360,7 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
 
 - (void)setSelectedTab:(NSInteger)selectedTab
 {
-    if (_selectedTab == selectedTab)
+    if (selectedTab < 0 || selectedTab >= (NSInteger)_tabs.count || _selectedTab == selectedTab)
         return;
     _selectedTab = selectedTab;
     [_table deselectAll:nil];
@@ -686,7 +686,6 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    msg_Dbg(getIntf(), "redesigned queue drag begins at row %ld", row);
     return _selectedTab == 0 ? [_dragDataSource tableView:tableView pasteboardWriterForRow:row] : nil;
 }
 
@@ -695,7 +694,6 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
                  proposedRow:(NSInteger)row
        proposedDropOperation:(NSTableViewDropOperation)operation
 {
-    msg_Dbg(getIntf(), "redesigned queue validates drag to row %ld", row);
     if (_selectedTab != 0)
         return NSDragOperationNone;
     NSDragOperation validated = [_dragDataSource tableView:tableView
@@ -710,7 +708,6 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
               row:(NSInteger)row
     dropOperation:(NSTableViewDropOperation)operation
 {
-    msg_Dbg(getIntf(), "redesigned queue accepts drag to row %ld", row);
     if (_selectedTab != 0)
         return NO;
     if ([info.draggingPasteboard availableTypeFromArray:@[

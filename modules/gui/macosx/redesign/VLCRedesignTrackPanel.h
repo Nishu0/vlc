@@ -5,9 +5,13 @@
  *****************************************************************************/
 #import <Cocoa/Cocoa.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface VLCRedesignTrackPanel : NSView
 @property (nonatomic) NSInteger selectedTab; /* video, audio, subtitles */
-@property (nonatomic, copy) void (^showPreferences)(void);
-@property (nonatomic, copy) void (^selectionChanged)(NSInteger tab);
+@property (nonatomic, copy, nullable) void (^showPreferences)(void);
+@property (nonatomic, copy, nullable) void (^selectionChanged)(NSInteger tab);
 - (void)refresh;
 @end
+
+NS_ASSUME_NONNULL_END

@@ -166,7 +166,7 @@ static NSImage *VLCTrackAsset(NSString *role)
 
 - (void)setSelectedTab:(NSInteger)selectedTab
 {
-    if (_selectedTab == selectedTab)
+    if (selectedTab < 0 || selectedTab >= (NSInteger)_tabs.count || _selectedTab == selectedTab)
         return;
     _selectedTab = selectedTab;
     if (self.selectionChanged)
@@ -274,8 +274,9 @@ static NSImage *VLCTrackAsset(NSString *role)
         _tabs[i].needsDisplay = YES;
     }
     NSResponder *responder = self.window.firstResponder;
-    NSString *focusedTrack = [_trackRows containsObject:responder] ? ((NSButton *)responder).title : nil;
-    NSString *focusedDevice = [_deviceRows containsObject:responder] ? ((NSButton *)responder).title : nil;
+    VLCRedesignPanelButton *focusedRow = [responder isKindOfClass:VLCRedesignPanelButton.class] ? (id)responder : nil;
+    NSString *focusedTrack = focusedRow && [_trackRows containsObject:focusedRow] ? focusedRow.title : nil;
+    NSString *focusedDevice = focusedRow && [_deviceRows containsObject:focusedRow] ? focusedRow.title : nil;
     for (NSView *row in _trackRows)
         [row removeFromSuperview];
     for (NSView *row in _deviceRows)

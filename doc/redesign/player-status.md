@@ -60,6 +60,31 @@ An older populated test-library directory triggered an AppKit constraint-update 
 
 Build/runtime logs and generated media remain ignored under `build-macos-baseline/`. Development UI iterations use a separate ad-hoc-signed `VLC-dev.app`; final preview distribution requires the full package build and signature checks. Test playback is authorized by the user; owned preview processes are stopped before replacing their binaries. Library test data is isolated through `VLC_USERDATA_PATH`.
 
+## Code-quality review
+
+The redesign now follows nearby Cocoa code with expanded setup methods, typed
+navigation state and section/sort enums, explicit optional callbacks, and shared
+image loading. Formatting was separated into its own commit; its non-comment
+tokens and concatenated string values were checked against the preceding source.
+
+Playlist/group database queries and directory-watch opens run on the browser's
+serial worker queue. The main thread applies results only for the current visible
+location. Hiding or detaching the browser invalidates pending work, cancels its
+watch, and closes its popup. Reused thumbnail views check their represented entry
+before accepting asynchronous artwork. The bounded shared SVG cache uses NSCache.
+
+The native arm64 development build passes. Compiler type/nullability warnings in
+the changed panels were resolved; retained legacy pasteboard support still uses
+AppKit's deprecated filename type. Standalone parser checks cover 12 valid,
+empty, mixed, relative-path, and malformed payload cases; their source and run
+instructions are in `test/modules/gui/macosx/`. The 42 text renders, three-item
+grid, selected icons/radio buttons, and clipped slider probes pass. Running-app
+checks confirmed playlist media loading, Music/Songs navigation, Back history,
+and browser hide/reopen. File-descriptor inspection confirmed that hiding the
+browser releases its folder watch. A generated clip appeared automatically
+after reopening the browser, confirming that watching resumes. This is local verification, not upstream
+maintainer review.
+
 ## Remaining main-player parts
 
 - Remaining external file/library drop acceptance checks.

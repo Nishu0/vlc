@@ -5,13 +5,17 @@
  *****************************************************************************/
 #import <Cocoa/Cocoa.h>
 
-NSImage *VLCRedesignPanelImage(NSString *name);
+NS_ASSUME_NONNULL_BEGIN
+
+NSImage *_Nullable VLCRedesignPanelImage(NSString *name);
 
 @interface VLCRedesignPanelButton : NSButton
-@property (copy) void (^activate)(void);
+@property (nonatomic, copy, nullable) void (^activate)(void);
 @property BOOL tab;
 @property BOOL footer;
 @property BOOL highlightedSelection;
-@property NSImage *selectionImage;
-@property NSImage *underlineImage;
+@property (nonatomic, strong, nullable) NSImage *selectionImage;
+@property (nonatomic, strong, nullable) NSImage *underlineImage;
 @end
+
+NS_ASSUME_NONNULL_END

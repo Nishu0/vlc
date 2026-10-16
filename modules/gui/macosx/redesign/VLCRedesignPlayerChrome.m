@@ -6,6 +6,7 @@
 
 #import "VLCRedesignPlayerChrome.h"
 #import "VLCRedesignAppearance.h"
+#import "VLCRedesignPanelButton.h"
 #import "VLCRedesignTextLayout.h"
 #import "VLCRedesignTrackPanel.h"
 #import "VLCRedesignQueuePanel.h"
@@ -29,27 +30,11 @@
 #import "windows/video/VLCVideoWindowCommon.h"
 #import "windows/video/VLCVideoOutputProvider.h"
 
-static NSImage *VLCPlayerResource(NSString *name)
-{
-    static NSMutableDictionary<NSString *, NSImage *> *images;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-        images = [NSMutableDictionary dictionary];
-    });
-    NSImage *image = images[name];
-    if (!image) {
-        image = [[NSImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:name ofType:@"svg"]];
-        if (image)
-            images[name] = image;
-    }
-    return image;
-}
-
 static NSImage *VLCPlayerAsset(NSString *role)
 {
     NSString *name =
         [NSString stringWithFormat:@"VLC-redesign-player-%@-%@", VLCRedesignAppearance.dark ? @"dark" : @"light", role];
-    return VLCPlayerResource(name);
+    return VLCRedesignPanelImage(name);
 }
 
 @interface VLCPlayerBar : NSView
@@ -77,12 +62,6 @@ static NSImage *VLCPlayerAsset(NSString *role)
 
 @implementation VLCPlayerIconButton
 
-- (BOOL)sendAction:(SEL)action to:(id)target
-{
-    msg_Dbg(getIntf(), "redesigned player action: %s", NSStringFromSelector(action).UTF8String);
-    return [super sendAction:action to:target];
-}
-
 - (void)drawRect:(NSRect)dirtyRect
 {
     BOOL hasActiveIcon = [@[ @"queue", @"audio", @"subtitles", @"settings", @"sidebar" ] containsObject:self.assetRole];
@@ -96,10 +75,10 @@ static NSImage *VLCPlayerAsset(NSString *role)
                                          yRadius:self.transport ? 6 : 4] fill];
     }
     NSImage *image = self.selected && hasActiveIcon
-                         ? VLCPlayerResource([@"VLC-redesign-player-active-" stringByAppendingString:self.assetRole])
+                         ? VLCRedesignPanelImage([@"VLC-redesign-player-active-" stringByAppendingString:self.assetRole])
                          : self.image;
     if (self.playing && self.transport)
-        image = VLCPlayerResource(@"VLC-redesign-player-pause");
+        image = VLCRedesignPanelImage(@"VLC-redesign-player-pause");
     NSSize size = image.size;
     NSRect slot = NSMakeRect(floor(NSMidX(self.bounds) - size.width / 2), floor(NSMidY(self.bounds) - size.height / 2),
                              size.width, size.height);
@@ -305,12 +284,12 @@ static NSImage *VLCPlayerAsset(NSString *role)
 
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view
 {
-    NSImage *background = VLCPlayerResource(@"VLC-redesign-player-dark-volume-background");
+    NSImage *background = VLCRedesignPanelImage(@"VLC-redesign-player-dark-volume-background");
     [background drawInRect:NSMakeRect(NSMinX(frame), NSMidY(frame) - background.size.height / 2, background.size.width,
                                       background.size.height)];
     CGFloat value = MAX(0, MIN(2, self.doubleValue));
     CGFloat filled = value <= 1 ? value * 60 : 60 + (value - 1) * 26;
-    NSImage *gradient = VLCPlayerResource(@"VLC-redesign-player-dark-volume-gradient");
+    NSImage *gradient = VLCRedesignPanelImage(@"VLC-redesign-player-dark-volume-gradient");
     [NSGraphicsContext saveGraphicsState];
     NSRectClip(NSMakeRect(NSMinX(frame) + 1.5, NSMinY(frame), filled, NSHeight(frame)));
     [gradient drawInRect:NSMakeRect(NSMinX(frame) + 1.5, NSMidY(frame) - gradient.size.height / 2, gradient.size.width,
@@ -873,14 +852,14 @@ static NSImage *VLCPlayerAsset(NSString *role)
         return;
     _browser = [[VLCRedesignCompactBrowser alloc] init];
     __weak typeof(self) weakSelf = self;
-    _browser.expandLibrary = ^(NSURL *folder, NSInteger section, BOOL grid) {
+    _browser.expandLibrary = ^(NSURL *folder, VLCRedesignBrowserSection section, BOOL grid) {
         [weakSelf expandLibraryFolder:folder section:section grid:grid];
     };
     _browser.openNetworkSource = ^(VLCMediaSource *source) {
         typeof(self) strongSelf = weakSelf;
         if (!strongSelf)
             return;
-        [strongSelf expandLibraryFolder:nil section:3 grid:NO];
+        [strongSelf expandLibraryFolder:nil section:VLCRedesignBrowserSectionNetwork grid:NO];
         VLCLibraryMediaSourceViewController *controller =
             (id)VLCMain.sharedInstance.libraryWindow.librarySegmentViewController;
         if (![controller isKindOfClass:VLCLibraryMediaSourceViewController.class])
@@ -904,15 +883,28 @@ static NSImage *VLCPlayerAsset(NSString *role)
     [self updateVisibility];
 }
 
-- (void)expandLibraryFolder:(NSURL *)folder section:(NSInteger)section grid:(BOOL)grid
+- (void)expandLibraryFolder:(NSURL *)folder section:(VLCRedesignBrowserSection)section grid:(BOOL)grid
 {
     [self closePlayerPanels];
     [self.videoController returnToLibrary:self];
     VLCLibraryWindow *window = VLCMain.sharedInstance.libraryWindow;
-    const NSInteger segments[] = {VLCLibraryHomeSegmentType,      VLCLibraryVideoSegmentType,
-                                  VLCLibraryMusicSegmentType,     VLCLibraryStreamsSegmentType,
-                                  VLCLibraryPlaylistsSegmentType, VLCLibraryHomeSegmentType};
-    window.librarySegmentType = segments[MAX(0, MIN(5, section))];
+    switch (section) {
+    case VLCRedesignBrowserSectionVideos:
+        window.librarySegmentType = VLCLibraryVideoSegmentType;
+        break;
+    case VLCRedesignBrowserSectionMusic:
+        window.librarySegmentType = VLCLibraryMusicSegmentType;
+        break;
+    case VLCRedesignBrowserSectionNetwork:
+        window.librarySegmentType = VLCLibraryStreamsSegmentType;
+        break;
+    case VLCRedesignBrowserSectionPlaylists:
+        window.librarySegmentType = VLCLibraryPlaylistsSegmentType;
+        break;
+    default:
+        window.librarySegmentType = VLCLibraryHomeSegmentType;
+        break;
+    }
     if (folder.isFileURL)
         [window browseFolderByMrl:folder.absoluteString];
     window.gridVsListSegmentedControl.selectedSegment =
@@ -924,7 +916,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 {
     NSURL *url = self.player.URLOfCurrentMediaItem;
     if (url.isFileURL)
-        [self expandLibraryFolder:url.URLByDeletingLastPathComponent section:1 grid:NO];
+        [self expandLibraryFolder:url.URLByDeletingLastPathComponent section:VLCRedesignBrowserSectionVideos grid:NO];
 }
 
 - (void)showMenu:(NSMenu *)menu sender:(NSView *)sender

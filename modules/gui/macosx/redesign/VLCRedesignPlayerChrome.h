@@ -6,6 +6,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class VLCMainVideoViewController;
 
 /* Owns only presentation and action bindings. VLC keeps ownership of the vout. */
@@ -16,3 +18,5 @@
 - (void)updateVisibility;
 @property (readonly) BOOL mouseOnControls;
 @end
+
+NS_ASSUME_NONNULL_END
