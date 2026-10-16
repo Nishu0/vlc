@@ -1,0 +1,745 @@
+{
+  "fileKey": "Ae7yBxqLV2SPUyxUSVHGhF",
+  "pageId": "0:1",
+  "inspectedOn": "2026-10-16",
+  "note": "Design metadata is reference material. reviewedScreen marks rendered frames inspected; other nodes are inventoried, not yet visually verified.",
+  "nodes": [
+    {
+      "id": "42:356",
+      "name": "Icon",
+      "width": 548,
+      "height": 812,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=42-356"
+    },
+    {
+      "id": "187:328",
+      "name": "Player",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=187-328",
+      "reviewedScreen": "Video player with compact library/playlist sidebar"
+    },
+    {
+      "id": "970:3308",
+      "name": "Player",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=970-3308",
+      "reviewedScreen": "Video library list with floating mini-player at bottom right"
+    },
+    {
+      "id": "970:3792",
+      "name": "Player",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=970-3792",
+      "reviewedScreen": "Video library list with floating mini-player at bottom left"
+    },
+    {
+      "id": "970:2703",
+      "name": "Player",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=970-2703",
+      "reviewedScreen": "Video library grid with floating mini-player at bottom right"
+    },
+    {
+      "id": "970:4028",
+      "name": "Player",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=970-4028",
+      "reviewedScreen": "Video library grid without mini-player"
+    },
+    {
+      "id": "6261:15078",
+      "name": "Player",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6261-15078",
+      "reviewedScreen": "Home; continue watching, listen again, frequent folders"
+    },
+    {
+      "id": "247:445",
+      "name": "Player",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=247-445",
+      "reviewedScreen": "Video player; left-aligned transport, bottom seek bar"
+    },
+    {
+      "id": "4767:23726",
+      "name": "Player - Music",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=4767-23726",
+      "reviewedScreen": "Music player with artwork and waveform"
+    },
+    {
+      "id": "4778:25123",
+      "name": "Player - Music",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=4778-25123",
+      "reviewedScreen": "Music player with compact songs sidebar"
+    },
+    {
+      "id": "3328:11554",
+      "name": "Player - hide UI",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3328-11554"
+    },
+    {
+      "id": "2425:13624",
+      "name": "Player - Light",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2425-13624",
+      "reviewedScreen": "Light appearance with compact video folder sidebar"
+    },
+    {
+      "id": "2107:5604",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2107-5604",
+      "reviewedScreen": "In-place customization; movable player controls and control palette"
+    },
+    {
+      "id": "2160:6137",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2160-6137"
+    },
+    {
+      "id": "2160:6564",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2160-6564"
+    },
+    {
+      "id": "2160:7005",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2160-7005"
+    },
+    {
+      "id": "2160:7437",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2160-7437"
+    },
+    {
+      "id": "2160:7869",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2160-7869"
+    },
+    {
+      "id": "6587:19923",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6587-19923"
+    },
+    {
+      "id": "2160:8301",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2160-8301"
+    },
+    {
+      "id": "2160:8732",
+      "name": "Player - customize",
+      "width": 1920,
+      "height": 1080,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2160-8732"
+    },
+    {
+      "id": "999:5047",
+      "name": "Settings - global",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=999-5047",
+      "reviewedScreen": "Global settings; basic options"
+    },
+    {
+      "id": "3046:9282",
+      "name": "Settings - global",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3046-9282"
+    },
+    {
+      "id": "3046:10057",
+      "name": "Settings - interface",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3046-10057"
+    },
+    {
+      "id": "3062:11379",
+      "name": "Settings - interface",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3062-11379"
+    },
+    {
+      "id": "3062:11911",
+      "name": "Settings - privacy",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3062-11911"
+    },
+    {
+      "id": "3062:12552",
+      "name": "Settings - playback",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3062-12552"
+    },
+    {
+      "id": "3072:13408",
+      "name": "Settings - playback",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3072-13408"
+    },
+    {
+      "id": "3073:14187",
+      "name": "Settings - video",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3073-14187"
+    },
+    {
+      "id": "3073:15375",
+      "name": "Settings - video",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3073-15375"
+    },
+    {
+      "id": "3073:15879",
+      "name": "Settings - audio",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3073-15879"
+    },
+    {
+      "id": "3180:17398",
+      "name": "Settings - audio",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3180-17398"
+    },
+    {
+      "id": "3180:17989",
+      "name": "Settings - subtitles",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3180-17989"
+    },
+    {
+      "id": "6536:13908",
+      "name": "Settings - subtitles",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6536-13908"
+    },
+    {
+      "id": "6536:14482",
+      "name": "Settings - controls",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6536-14482"
+    },
+    {
+      "id": "6542:15251",
+      "name": "Settings - library",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6542-15251"
+    },
+    {
+      "id": "6543:15649",
+      "name": "Settings - network",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6543-15649"
+    },
+    {
+      "id": "6571:15958",
+      "name": "Settings - performance",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6571-15958"
+    },
+    {
+      "id": "6571:16429",
+      "name": "Settings - recording",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6571-16429"
+    },
+    {
+      "id": "6575:17137",
+      "name": "Settings - extensions",
+      "width": 1048,
+      "height": 865,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6575-17137"
+    },
+    {
+      "id": "1911:7545",
+      "name": "Add Subtitles to Playlist/Folder",
+      "width": 1048,
+      "height": 800,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1911-7545"
+    },
+    {
+      "id": "3336:11929",
+      "name": "Add Subtitles to Playlist/Folder",
+      "width": 1048,
+      "height": 800,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3336-11929"
+    },
+    {
+      "id": "1919:8707",
+      "name": "Add Subtitles to Playlist/Folder",
+      "width": 1048,
+      "height": 800,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1919-8707"
+    },
+    {
+      "id": "1919:9278",
+      "name": "Add Subtitles to Playlist/Folder",
+      "width": 1048,
+      "height": 800,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1919-9278"
+    },
+    {
+      "id": "2437:14832",
+      "name": "Keyboard Shortcuts",
+      "width": 1048,
+      "height": 800,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2437-14832"
+    },
+    {
+      "id": "6216:13614",
+      "name": "Open network stream",
+      "width": 1048,
+      "height": 631,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6216-13614"
+    },
+    {
+      "id": "6259:14954",
+      "name": "new playlist",
+      "width": 713,
+      "height": 589,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6259-14954"
+    },
+    {
+      "id": "1899:3055",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1899-3055",
+      "reviewedScreen": "Welcome; initial media folder"
+    },
+    {
+      "id": "1902:3670",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-3670",
+      "reviewedScreen": "Onboarding appearance; dark with orange accent"
+    },
+    {
+      "id": "1902:6770",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-6770",
+      "reviewedScreen": "Onboarding final shortcut introduction"
+    },
+    {
+      "id": "1902:4020",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-4020",
+      "reviewedScreen": "Onboarding appearance; dark with red accent"
+    },
+    {
+      "id": "1902:4325",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-4325"
+    },
+    {
+      "id": "1902:4634",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-4634"
+    },
+    {
+      "id": "1902:4940",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-4940"
+    },
+    {
+      "id": "1902:5245",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-5245"
+    },
+    {
+      "id": "1902:5550",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-5550"
+    },
+    {
+      "id": "1902:6160",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-6160"
+    },
+    {
+      "id": "1902:6465",
+      "name": "Onboarding",
+      "width": 1090,
+      "height": 759,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1902-6465"
+    },
+    {
+      "id": "177:98",
+      "name": "Icon Wrapper",
+      "width": 72,
+      "height": 122,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=177-98"
+    },
+    {
+      "id": "244:184",
+      "name": "volume",
+      "width": 130,
+      "height": 646,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=244-184"
+    },
+    {
+      "id": "491:1780",
+      "name": "Controls",
+      "width": 1960,
+      "height": 11139,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=491-1780"
+    },
+    {
+      "id": "2151:9673",
+      "name": "thumbnail",
+      "width": 272,
+      "height": 189,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2151-9673"
+    },
+    {
+      "id": "500:3063",
+      "name": "Button",
+      "width": 400,
+      "height": 140,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=500-3063"
+    },
+    {
+      "id": "536:1014",
+      "name": "Toggle",
+      "width": 120,
+      "height": 194,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=536-1014"
+    },
+    {
+      "id": "536:1513",
+      "name": "Audio - Compressor Settings",
+      "width": 400,
+      "height": 821,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=536-1513"
+    },
+    {
+      "id": "6114:13610",
+      "name": "Audio - Equalizer",
+      "width": 400,
+      "height": 1623,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6114-13610"
+    },
+    {
+      "id": "536:1703",
+      "name": "Audio - Spatializer Settings",
+      "width": 400,
+      "height": 821,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=536-1703"
+    },
+    {
+      "id": "612:1223",
+      "name": "Audio - Stereo Widener",
+      "width": 400,
+      "height": 821,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=612-1223"
+    },
+    {
+      "id": "536:1855",
+      "name": "Video - Essential",
+      "width": 400,
+      "height": 821,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=536-1855"
+    },
+    {
+      "id": "543:990",
+      "name": "Video - Crop",
+      "width": 400,
+      "height": 821,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=543-990"
+    },
+    {
+      "id": "614:1430",
+      "name": "Video - Colors",
+      "width": 400,
+      "height": 888,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=614-1430"
+    },
+    {
+      "id": "804:1208",
+      "name": "Values",
+      "width": 253,
+      "height": 404,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=804-1208"
+    },
+    {
+      "id": "848:1712",
+      "name": "play",
+      "width": 94,
+      "height": 116,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=848-1712"
+    },
+    {
+      "id": "848:1996",
+      "name": "sidebar",
+      "width": 4492,
+      "height": 1028,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=848-1996"
+    },
+    {
+      "id": "856:2215",
+      "name": "Sorting Options",
+      "width": 265,
+      "height": 776,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=856-2215"
+    },
+    {
+      "id": "2107:5903",
+      "name": "context menu",
+      "width": 265,
+      "height": 296,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2107-5903"
+    },
+    {
+      "id": "2139:8935",
+      "name": "folder context menu",
+      "width": 265,
+      "height": 296,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2139-8935"
+    },
+    {
+      "id": "2404:13340",
+      "name": "file context menu",
+      "width": 265,
+      "height": 584,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2404-13340"
+    },
+    {
+      "id": "2459:9389",
+      "name": "playlist context menu",
+      "width": 265,
+      "height": 392,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2459-9389"
+    },
+    {
+      "id": "858:3290",
+      "name": "View Options",
+      "width": 265,
+      "height": 104,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=858-3290"
+    },
+    {
+      "id": "970:3091",
+      "name": "Miniplayer",
+      "width": 431,
+      "height": 2816.375,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=970-3091"
+    },
+    {
+      "id": "1904:7238",
+      "name": "Current Time",
+      "width": 114,
+      "height": 164,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1904-7238"
+    },
+    {
+      "id": "2245:9805",
+      "name": "audio value",
+      "width": 121,
+      "height": 37,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2245-9805"
+    },
+    {
+      "id": "1905:7312",
+      "name": "Duration",
+      "width": 114,
+      "height": 164,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1905-7312"
+    },
+    {
+      "id": "1915:8397",
+      "name": "subtitle multiple",
+      "width": 519,
+      "height": 239,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1915-8397"
+    },
+    {
+      "id": "1919:9121",
+      "name": "subtitle one",
+      "width": 519,
+      "height": 239,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1919-9121"
+    },
+    {
+      "id": "1959:5325",
+      "name": "target",
+      "width": 240,
+      "height": 520,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1959-5325"
+    },
+    {
+      "id": "1963:5465",
+      "name": "origin",
+      "width": 240,
+      "height": 525,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=1963-5465"
+    },
+    {
+      "id": "2107:5935",
+      "name": "option",
+      "width": 301,
+      "height": 292,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2107-5935"
+    },
+    {
+      "id": "6062:13354",
+      "name": "menu",
+      "width": 375,
+      "height": 585,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6062-13354"
+    },
+    {
+      "id": "2372:8300",
+      "name": "Dropdown",
+      "width": 406,
+      "height": 369,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2372-8300"
+    },
+    {
+      "id": "2372:8834",
+      "name": "Setting Preset",
+      "width": 406,
+      "height": 412,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2372-8834"
+    },
+    {
+      "id": "2372:8487",
+      "name": "EQ presets",
+      "width": 406,
+      "height": 460,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2372-8487"
+    },
+    {
+      "id": "2372:8639",
+      "name": "Audio Visualizer",
+      "width": 406,
+      "height": 369,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2372-8639"
+    },
+    {
+      "id": "2372:8733",
+      "name": "HDR Options",
+      "width": 406,
+      "height": 422,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2372-8733"
+    },
+    {
+      "id": "6456:13892",
+      "name": "sub filename",
+      "width": 406,
+      "height": 422,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6456-13892"
+    },
+    {
+      "id": "2404:9167",
+      "name": "media",
+      "width": 377,
+      "height": 228,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2404-9167"
+    },
+    {
+      "id": "2459:9352",
+      "name": "playlist",
+      "width": 377,
+      "height": 228,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=2459-9352"
+    },
+    {
+      "id": "3021:9835",
+      "name": "setting category",
+      "width": 228,
+      "height": 140,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3021-9835"
+    },
+    {
+      "id": "3176:16556",
+      "name": "Values",
+      "width": 360,
+      "height": 216,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3176-16556"
+    },
+    {
+      "id": "3178:16769",
+      "name": "EQ",
+      "width": 824,
+      "height": 628,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=3178-16769"
+    },
+    {
+      "id": "6065:13616",
+      "name": "right-click menu",
+      "width": 292,
+      "height": 683,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6065-13616"
+    },
+    {
+      "id": "6648:20666",
+      "name": "Profiles",
+      "width": 651,
+      "height": 633,
+      "url": "https://www.figma.com/design/Ae7yBxqLV2SPUyxUSVHGhF/VLC-Redesign--Community-?node-id=6648-20666"
+    }
+  ]
+}
