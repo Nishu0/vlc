@@ -6,6 +6,7 @@
 
 #import "VLCOnboardingWindowController.h"
 #import "VLCRedesignAppearance.h"
+#import "VLCRedesignTextLayout.h"
 #import "extensions/NSString+Helpers.h"
 #import "library/VLCLibraryController.h"
 #import "library/VLCLibraryWindow.h"
@@ -53,21 +54,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
                                                        VLCRedesignAppearance.subduedColor
     };
     NSAttributedString *title = [[NSAttributedString alloc] initWithString:self.title attributes:attributes];
-    CTLineRef line = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)title);
-    /* Center visible glyphs, excluding the font's asymmetric line-box padding. */
-    CGRect inkBounds = CTLineGetBoundsWithOptions(line, kCTLineBoundsUseGlyphPathBounds);
-    CGContextRef context = NSGraphicsContext.currentContext.CGContext;
-    CGContextSaveGState(context);
-    if (self.flipped) {
-        CGContextTranslateCTM(context, 0, NSMinY(self.bounds) + NSMaxY(self.bounds));
-        CGContextScaleCTM(context, 1, -1);
-    }
-    CGContextSetTextMatrix(context, CGAffineTransformIdentity);
-    CGContextSetTextPosition(context, NSMidX(self.bounds) - CGRectGetMidX(inkBounds),
-                            NSMidY(self.bounds) - CGRectGetMidY(inkBounds));
-    CTLineDraw(line, context);
-    CGContextRestoreGState(context);
-    CFRelease(line);
+    VLCDrawAlignedText(title, self.bounds, self.flipped, NSTextAlignmentCenter);
     if (self.window.firstResponder == self) {
         [VLCRedesignAppearance.accentColor setStroke];
         NSBezierPath *ring = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(self.bounds, 1, 1)
@@ -153,9 +140,8 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         NSFontAttributeName: [VLCRedesignAppearance fontOfSize:16 weight:NSFontWeightLight],
         NSForegroundColorAttributeName: VLCRedesignAppearance.subduedColor
     };
-    NSSize size = [self.title sizeWithAttributes:attributes];
-    [self.title drawAtPoint:NSMakePoint((NSWidth(self.bounds) - size.width) / 2, 138)
-            withAttributes:attributes];
+    NSAttributedString *title = [[NSAttributedString alloc] initWithString:self.title attributes:attributes];
+    VLCDrawAlignedText(title, NSMakeRect(0, 138, NSWidth(self.bounds), 20), self.flipped, NSTextAlignmentCenter);
 }
 @end
 
@@ -267,6 +253,15 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     stack.alignment = vertical ? NSLayoutAttributeCenterX : NSLayoutAttributeCenterY;
     stack.spacing = spacing;
     return stack;
+}
+
+- (NSTextField *)alignedLabel:(NSString *)text size:(CGFloat)size weight:(NSFontWeight)weight color:(NSColor *)color
+{
+    NSTextField *label = [VLCRedesignAlignedLabel wrappingLabelWithString:text];
+    label.translatesAutoresizingMaskIntoConstraints = NO;
+    label.font = [VLCRedesignAppearance fontOfSize:size weight:weight];
+    label.textColor = color;
+    return label;
 }
 
 - (NSView *)spacer:(CGFloat)height
@@ -436,7 +431,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 
 - (NSTextField *)previewTime:(NSString *)time
 {
-    NSTextField *label = [self label:time size:8.25 weight:NSFontWeightRegular
+    NSTextField *label = [self alignedLabel:time size:8.25 weight:NSFontWeightRegular
                              color:VLCRedesignAppearance.subduedColor];
     label.alignment = NSTextAlignmentCenter;
     [label.widthAnchor constraintEqualToConstant:41.8].active = YES;
@@ -670,9 +665,17 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     }
     raw = [raw componentsSeparatedByString:@"\t"].firstObject;
     NSString *display = raw.length ? OSXStringKeyToString(raw) : _NS("Not Set");
-    NSTextField *label = [self label:display size:16 weight:NSFontWeightLight
+    NSTextField *label = [self alignedLabel:display size:16 weight:NSFontWeightLight
                              color:VLCRedesignAppearance.secondaryColor];
     label.alignment = NSTextAlignmentCenter;
+    label.maximumNumberOfLines = 1;
+    label.cell.wraps = NO;
+    label.lineBreakMode = NSLineBreakByClipping;
+    NSAttributedString *keyTitle = [[NSAttributedString alloc] initWithString:display
+        attributes:@{NSFontAttributeName:label.font}];
+    CTLineRef keyLine = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)keyTitle);
+    CGFloat keyWidth = ceil(CTLineGetTypographicBounds(keyLine, NULL, NULL, NULL));
+    CFRelease(keyLine);
     NSView *cap = [[NSView alloc] init];
     cap.translatesAutoresizingMaskIntoConstraints = NO;
     cap.wantsLayer = YES;
@@ -684,6 +687,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     [NSLayoutConstraint activateConstraints:@[
         [cap.heightAnchor constraintEqualToConstant:44],
         [cap.widthAnchor constraintGreaterThanOrEqualToConstant:44],
+        [label.widthAnchor constraintGreaterThanOrEqualToConstant:keyWidth],
         [label.leadingAnchor constraintEqualToAnchor:cap.leadingAnchor constant:12],
         [label.trailingAnchor constraintEqualToAnchor:cap.trailingAnchor constant:-12],
         [label.centerYAnchor constraintEqualToAnchor:cap.centerYAnchor]
@@ -696,7 +700,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     NSMutableArray *views = [NSMutableArray array];
     for (NSString *option in options) {
         if (views.count)
-            [views addObject:[self label:@"/" size:16 weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor]];
+            [views addObject:[self alignedLabel:@"/" size:16 weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor]];
         [views addObject:[self keycap:option]];
     }
     return [self stack:views vertical:NO spacing:10];
@@ -727,8 +731,8 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
         NSArray *keys = column == 0 ? leftKeys : rightKeys;
         for (NSInteger row = 0; row < 6; row++) {
             NSView *caps = [keys[row] count] ? [self keys:keys[row]] :
-                [self label:_NS("Not Set") size:14 weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor];
-            [rows addObject:@[[self label:labels[row] size:16 weight:NSFontWeightLight
+                [self alignedLabel:_NS("Not Set") size:14 weight:NSFontWeightLight color:VLCRedesignAppearance.subduedColor];
+            [rows addObject:@[[self alignedLabel:labels[row] size:16 weight:NSFontWeightLight
                                     color:VLCRedesignAppearance.subduedColor], caps]];
         }
         NSGridView *grid = [NSGridView gridViewWithViews:rows];

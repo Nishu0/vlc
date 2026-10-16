@@ -78,4 +78,4 @@ Baseline gate passed before any redesign application-code edits. The baseline ap
 
 ## First redesign slice
 
-Native onboarding and appearance changes compile and package through the same configured build tree. The latest logs are `redesign-folder-final-make-final.log` and `redesign-folder-final-package-final.log`. See [onboarding verification and scope](onboarding-status.md). The working `build-macos-baseline/VLC.app` now contains these changes; it is distinct from the preserved unchanged baseline under `artifacts/macos-baseline/`.
+Native onboarding and appearance changes compile and package through the same configured build tree. The latest logs are `redesign-text-audit-make-final.log` and `redesign-text-audit-package-final.log`. See [onboarding verification and scope](onboarding-status.md). The working `build-macos-baseline/VLC.app` now contains these changes; it is distinct from the preserved unchanged baseline under `artifacts/macos-baseline/`.

@@ -102,6 +102,8 @@ endif
 libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignAppearance.h \
 	gui/macosx/redesign/VLCRedesignAppearance.m \
+	gui/macosx/redesign/VLCRedesignTextLayout.h \
+	gui/macosx/redesign/VLCRedesignTextLayout.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \

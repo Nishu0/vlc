@@ -34,6 +34,8 @@ The onboarding button labels now center their visible Core Text glyph bounds rat
 
 The media-folder field now fills the input height and uses a native text cell with a shared drawing/editing rectangle. Glyph metrics and field-editor descender padding determine its vertical placement. The displayed `~/Movies` path was visually checked beside Browse in the packaged VLC app. A native component check using the same cell verified selection and typing a longer path. Input remains left-aligned, editable, and horizontally scrollable.
 
+The broader [text alignment audit](text-alignment.md) adds a shared renderer for button titles, theme captions, keycaps, shortcut descriptions, and preview timestamps. Native label alignment insets no longer offset custom text drawing. Keycaps reserve their measured text width so combinations stay on one line at the shortcut screen's 960×680 minimum. Forty-two native render checks passed; compact/large and light/dark app renders were also checked. This contract applies to each subsequent redesigned screen.
+
 ## Scope remaining
 
 The actual playback controls, top bar, compact browser, library home, music, mini-player, inspectors, settings, customization, and advanced workflows still need implementation and acceptance against the full map. Most existing windows still use VLC's original native layout. Applying dark mode and an accent does not make those windows match Figma.

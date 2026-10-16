@@ -18,6 +18,7 @@ Source baseline: `4953f0be3ea61dd5fc62f2c333e540d2b166ccbc`, VLC `4.0.0-dev`. Or
 - [Build and verification record](build-status.md): reproducible commands and observed results.
 - [First native redesign slice](onboarding-status.md): implementation, verification, preview scope, and remaining work.
 - [Figma cache and request budget](figma-reference-workflow.md): reuse saved references and keep new reads below a conservative working budget.
+- [Text alignment contract](text-alignment.md): shared native rendering and required checks for every redesigned screen.
 
 ## Platform decision
 
