@@ -106,6 +106,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignTextLayout.m \
 	gui/macosx/redesign/VLCRedesignPlayerChrome.h \
 	gui/macosx/redesign/VLCRedesignPlayerChrome.m \
+	gui/macosx/redesign/VLCRedesignTrackPanel.h \
+	gui/macosx/redesign/VLCRedesignTrackPanel.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \
@@ -699,6 +701,20 @@ libmacosx_plugin_la_RES = \
 	gui/macosx/Resources/redesign/VLC-redesign-player-light-previous.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-player-light-next.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-player-pause.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-video-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-video-on.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-audio-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-audio-on.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-subtitles-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-subtitles-on.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-check.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-refresh.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-edit.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-add.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-video.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-audio.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-tracks-divider.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-cone.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-orange.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-red.svg \

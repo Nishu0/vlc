@@ -2177,11 +2177,16 @@ static int BossCallback(vlc_object_t *p_this,
 {
     self = [super init];
     if (self && p_track != NULL) {
-        _esID = p_track->es_id;
+        _esID = vlc_es_id_Hold(p_track->es_id);
         _name = toNSStr(p_track->name);
         _selected = p_track->selected;
     }
     return self;
+}
+
+- (void)dealloc
+{
+    if (_esID) vlc_es_id_Release(_esID);
 }
 
 - (NSString *)description

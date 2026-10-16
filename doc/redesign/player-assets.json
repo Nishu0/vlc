@@ -257,5 +257,103 @@
     "resource": "VLC-redesign-player-pause.svg",
     "role": "pause",
     "theme": "both"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "ac8b1.svg",
+    "resource": "VLC-redesign-tracks-video-off.svg",
+    "role": "tracks-video-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "498:2674",
+    "asset": "5ce41.svg",
+    "resource": "VLC-redesign-tracks-video-on.svg",
+    "role": "tracks-video-on",
+    "theme": "dark"
+  },
+  {
+    "screen": "498:2674",
+    "asset": "94cee.svg",
+    "resource": "VLC-redesign-tracks-audio-off.svg",
+    "role": "tracks-audio-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "c146b.svg",
+    "resource": "VLC-redesign-tracks-audio-on.svg",
+    "role": "tracks-audio-on",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "6d2f8.svg",
+    "resource": "VLC-redesign-tracks-subtitles-off.svg",
+    "role": "tracks-subtitles-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "763:1958",
+    "asset": "6b6d9.svg",
+    "resource": "VLC-redesign-tracks-subtitles-on.svg",
+    "role": "tracks-subtitles-on",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "d74b3.svg",
+    "resource": "VLC-redesign-tracks-check.svg",
+    "role": "tracks-check",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "13d5f.svg",
+    "resource": "VLC-redesign-tracks-refresh.svg",
+    "role": "tracks-refresh",
+    "theme": "dark"
+  },
+  {
+    "screen": "498:2674",
+    "asset": "002a4.svg",
+    "resource": "VLC-redesign-tracks-tab-line-video.svg",
+    "role": "tracks-tab-line-video",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "e4ac1.svg",
+    "resource": "VLC-redesign-tracks-tab-line-audio.svg",
+    "role": "tracks-tab-line-audio",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "c6fd5.svg",
+    "resource": "VLC-redesign-tracks-tab-line-off.svg",
+    "role": "tracks-tab-line-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "9ddc4.svg",
+    "resource": "VLC-redesign-tracks-divider.svg",
+    "role": "tracks-divider",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:2216",
+    "asset": "7d812.svg",
+    "resource": "VLC-redesign-tracks-edit.svg",
+    "role": "tracks-edit",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:2216",
+    "asset": "97a9d.svg",
+    "resource": "VLC-redesign-tracks-add.svg",
+    "role": "tracks-add",
+    "theme": "dark"
   }
 ]

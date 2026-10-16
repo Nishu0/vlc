@@ -20,3 +20,7 @@ Main player chrome: screens 247:445 (dark) and 2425:13624 (light).
 The pause state comes from component 848:1713. Exact resource/layer mappings
 are recorded in doc/redesign/player-assets.json. The original volume SVG
 background and gradient are composited with a live volume-dependent clip.
+
+The direct track selector adds unchanged icons and separators from Figma nodes
+496:2495, 498:2674, 491:2216, and the active subtitle icon from 763:1958.
+See doc/redesign/player-assets.json for all resource/source mappings.
