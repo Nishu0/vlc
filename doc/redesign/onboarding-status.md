@@ -32,6 +32,8 @@ The app includes 390 VLC plugins and passes deep strict ad-hoc signature verific
 
 The onboarding button labels now center their visible Core Text glyph bounds rather than the font's line box. This corrects the low baseline reported for Back/Next and applies consistently to Finish/Browse. The rebuilt native appearance screen was visually checked, and Back/Next navigation was exercised again.
 
+The media-folder field now fills the input height and uses a native text cell with a shared drawing/editing rectangle. Glyph metrics and field-editor descender padding determine its vertical placement. The displayed `~/Movies` path was visually checked beside Browse in the packaged VLC app. A native component check using the same cell verified selection and typing a longer path. Input remains left-aligned, editable, and horizontally scrollable.
+
 ## Scope remaining
 
 The actual playback controls, top bar, compact browser, library home, music, mini-player, inspectors, settings, customization, and advanced workflows still need implementation and acceptance against the full map. Most existing windows still use VLC's original native layout. Applying dark mode and an accent does not make those windows match Figma.

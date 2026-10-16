@@ -137,6 +137,10 @@ Each category needs basic options followed by its own advanced section; search m
 
 Windows can reuse feature design, assets, core changes, and test media, but the UI work is separate. Therefore prioritize the Mac milestone rather than starting a second complete interface before the first baseline works.
 
+### Git milestones
+
+The user requested regular GitHub commits as completed work is verified. Keep changes in focused milestone commits on `codex/vlc-redesign` and push them to `origin` (`Nishu0/vlc`) after their relevant build and behavior checks pass. Keep generated builds and the Figma reference cache ignored. Do not treat pushing a source milestone as completion of the entire redesign.
+
 ## Definition of completion
 
 A screen is complete only after its controls operate on real media, its settings persist correctly, its error/empty/loading states work, its layout resizes, and a rendered comparison has been reviewed. A packaged binary alone is not evidence that all VLC functions work. Record partial or platform-specific capability honestly, especially for reverse playback, HDR, capture devices, network streams, external subtitle services, and renderer/casting hardware.
