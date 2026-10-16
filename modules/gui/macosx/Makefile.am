@@ -108,6 +108,10 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignPlayerChrome.m \
 	gui/macosx/redesign/VLCRedesignTrackPanel.h \
 	gui/macosx/redesign/VLCRedesignTrackPanel.m \
+	gui/macosx/redesign/VLCRedesignPanelButton.h \
+	gui/macosx/redesign/VLCRedesignPanelButton.m \
+	gui/macosx/redesign/VLCRedesignQueuePanel.h \
+	gui/macosx/redesign/VLCRedesignQueuePanel.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \
@@ -711,6 +715,22 @@ libmacosx_plugin_la_RES = \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-refresh.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-edit.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-add.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-queue-on.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-queue-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-bookmarks-on.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-bookmarks-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-chapters-on.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-chapters-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-sort.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-repeat.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-shuffle.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-remove.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-add.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-queue-grip.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-active-queue.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-active-audio.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-active-subtitles.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-active-settings.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-video.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-audio.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-tracks-tab-line-off.svg \

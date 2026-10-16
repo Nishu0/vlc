@@ -24,3 +24,7 @@ background and gradient are composited with a live volume-dependent clip.
 The direct track selector adds unchanged icons and separators from Figma nodes
 496:2495, 498:2674, 491:2216, and the active subtitle icon from 763:1958.
 See doc/redesign/player-assets.json for all resource/source mappings.
+
+Queue, bookmark and chapter panel assets are from 491:1781, 6320:13763,
+and 6321:14024. Active player-tool assets retain the source exports from
+491:1781, 496:2495, 491:2216, and 763:1958. All exports remain unchanged.

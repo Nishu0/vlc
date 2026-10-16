@@ -39,6 +39,7 @@ extern NSString * const VLCPlaybackHasNextChanged;
 extern NSString * const VLCPlayQueueCurrentItemIndexChanged;
 extern NSString * const VLCPlayQueueItemsAdded;
 extern NSString * const VLCPlayQueueItemsRemoved;
+extern NSString * const VLCPlayQueueItemsUpdated;
 
 @interface VLCPlayQueueController : NSObject
 

@@ -45,6 +45,7 @@ NSString * const VLCPlaybackHasNextChanged = @"VLCPlaybackHasNextChanged";
 NSString * const VLCPlayQueueCurrentItemIndexChanged = @"VLCPlayQueueCurrentItemIndexChanged";
 NSString * const VLCPlayQueueItemsAdded = @"VLCPlayQueueItemsAdded";
 NSString * const VLCPlayQueueItemsRemoved = @"VLCPlayQueueItemsRemoved";
+NSString * const VLCPlayQueueItemsUpdated = @"VLCPlayQueueItemsUpdated";
 
 NSString * const VLCLibraryPlayQueueModeDefaultsKey = @"VLCLibraryPlayQueueMode";
 
@@ -318,6 +319,7 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     [_playQueueModel addItems:items];
 
     [_playQueueDataSource playQueueUpdated];
+    [_defaultNotificationCenter postNotificationName:VLCPlayQueueItemsUpdated object:self];
 }
 
 - (void)playQueueAdded:(NSArray *)items atIndex:(size_t)insertionIndex count:(size_t)numberOfItems
@@ -332,6 +334,7 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 {
     [_playQueueModel moveItemAtIndex:index toTarget:target];
     [_playQueueDataSource playQueueUpdated];
+    [_defaultNotificationCenter postNotificationName:VLCPlayQueueItemsUpdated object:self];
 }
 
 - (void)playQueueRemovedItemsAtIndex:(size_t)index count:(size_t)numberOfItems
@@ -357,6 +360,7 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
     vlc_playlist_Unlock(_p_playlist);
 
     [_playQueueDataSource playQueueItemsUpdatedAtIndex:firstUpdatedIndex count:numberOfItems];
+    [_defaultNotificationCenter postNotificationName:VLCPlayQueueItemsUpdated object:self];
 
 }
 
@@ -480,8 +484,12 @@ static const struct vlc_playlist_callbacks playlist_callbacks = {
 - (int)moveItemWithID:(int64_t)uniqueID toPosition:(size_t)target
 {
     vlc_playlist_item_t **items = calloc(1, sizeof(vlc_playlist_item_t *));
+    if (!items) return VLC_ENOMEM;
     vlc_playlist_Lock(_p_playlist);
     ssize_t itemIndex = vlc_playlist_IndexOfId(_p_playlist, uniqueID);
+    if (itemIndex < 0) {
+        vlc_playlist_Unlock(_p_playlist); free(items); return VLC_ENOENT;
+    }
     vlc_playlist_item_t *p_item = vlc_playlist_Get(_p_playlist, itemIndex);
     items[0] = p_item;
     int ret = vlc_playlist_RequestMove(_p_playlist, items, 1, target, itemIndex);

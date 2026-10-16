@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  *****************************************************************************/
 #import "VLCRedesignTrackPanel.h"
+#import "VLCRedesignPanelButton.h"
 #import "VLCRedesignAppearance.h"
 #import "VLCRedesignTextLayout.h"
 #import "extensions/NSString+Helpers.h"
@@ -18,16 +19,7 @@
 
 static NSImage *VLCTrackAsset(NSString *role)
 {
-    NSString *name = [@"VLC-redesign-tracks-" stringByAppendingString:role];
-    static NSMutableDictionary<NSString *, NSImage *> *cache;
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{ cache = [NSMutableDictionary dictionary]; });
-    NSImage *image = cache[name];
-    if (!image) {
-        image = [[NSImage alloc] initWithContentsOfFile:[NSBundle.mainBundle pathForResource:name ofType:@"svg"]];
-        if (image) cache[name] = image;
-    }
-    return image;
+    return VLCRedesignPanelImage([@"VLC-redesign-tracks-" stringByAppendingString:role]);
 }
 
 @interface VLCTrackDocument : NSView
@@ -36,79 +28,21 @@ static NSImage *VLCTrackAsset(NSString *role)
 - (BOOL)isFlipped { return YES; }
 @end
 
-/* Native buttons retain keyboard and accessibility behavior; all text uses the
- * shared glyph alignment contract, including long translated track names. */
-@interface VLCTrackButton : NSButton
-@property (copy) void (^activate)(void);
-@property BOOL tab;
-@property BOOL footer;
-@property NSImage *selectionImage;
-@property NSImage *underlineImage;
-@end
-@implementation VLCTrackButton
-- (BOOL)isFlipped { return YES; }
-- (instancetype)init
-{
-    self = [super init];
-    if (self) { self.bordered = NO; self.target = self; self.action = @selector(invoke:); }
-    return self;
-}
-- (void)invoke:(id)sender { if (self.activate) self.activate(); }
-- (NSAccessibilityRole)accessibilityRole { return self.selectionImage ? NSAccessibilityRadioButtonRole : NSAccessibilityButtonRole; }
-- (id)accessibilityValue { return self.selectionImage ? @(self.state == NSControlStateValueOn) : nil; }
-- (NSEdgeInsets)alignmentRectInsets { return NSEdgeInsetsMake(0,0,0,0); }
-- (void)drawRect:(NSRect)dirtyRect
-{
-    NSRect bounds = self.bounds;
-    if (self.footer || self.highlighted) {
-        [[VLCRedesignAppearance colorWithRGB:self.highlighted ? 0x222222 : 0x090909] setFill];
-        [[NSBezierPath bezierPathWithRoundedRect:bounds xRadius:4 yRadius:4] fill];
-    }
-    NSColor *color = [VLCRedesignAppearance colorWithRGB:self.tab ? (self.state == NSControlStateValueOn ? 0x8F8F8F : 0x6B6B6B) : self.footer ? 0x6B6B6B : 0x969696];
-    NSFont *font = [VLCRedesignAppearance fontOfSize:self.tab ? 12 : 14 weight:NSFontWeightRegular];
-    NSMutableParagraphStyle *paragraph = [[NSMutableParagraphStyle alloc] init];
-    paragraph.lineBreakMode = NSLineBreakByTruncatingTail;
-    NSAttributedString *text = [[NSAttributedString alloc] initWithString:self.title attributes:@{NSFontAttributeName:font, NSForegroundColorAttributeName:color, NSParagraphStyleAttributeName:paragraph}];
-    NSRect textSlot = self.footer ? bounds : NSMakeRect(42,0,MAX(0,NSWidth(bounds)-46),NSHeight(bounds));
-    if (self.tab) {
-        CGFloat groupWidth = MIN(text.size.width, NSWidth(bounds)-40)+28;
-        CGFloat x = floor((NSWidth(bounds)-groupWidth)/2);
-        [self.image drawInRect:NSMakeRect(x,14,20,20) fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
-        textSlot = NSMakeRect(x+28,14,MAX(0,groupWidth-28),20);
-        NSImage *line = self.underlineImage;
-        [NSGraphicsContext saveGraphicsState];
-        NSRectClip(NSMakeRect(8,48,MAX(0,NSWidth(bounds)-16),2));
-        [line drawInRect:NSMakeRect((NSWidth(bounds)-line.size.width)/2,48,line.size.width,line.size.height) fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
-        [NSGraphicsContext restoreGraphicsState];
-    } else if (self.state == NSControlStateValueOn) {
-        [self.selectionImage drawInRect:NSMakeRect(4,(NSHeight(bounds)-24)/2,24,24) fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
-    } else if (self.image) {
-        NSSize size = self.image.size;
-        [self.image drawInRect:NSMakeRect((NSWidth(bounds)-size.width)/2,(NSHeight(bounds)-size.height)/2,size.width,size.height) fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
-    }
-    VLCDrawAlignedText(text, textSlot, self.flipped, self.tab || self.footer ? NSTextAlignmentCenter : NSTextAlignmentLeft);
-    if (self.window.firstResponder == self) {
-        [VLCRedesignAppearance.accentColor setStroke];
-        [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(bounds,1,1) xRadius:4 yRadius:4] stroke];
-    }
-}
-@end
-
 @interface VLCRedesignTrackPanel ()
-@property NSArray<VLCTrackButton *> *tabs;
+@property NSArray<VLCRedesignPanelButton *> *tabs;
 @property NSView *header;
 @property VLCRedesignAlignedLabel *trackHeading;
 @property VLCRedesignAlignedLabel *deviceHeading;
 @property NSImageView *divider;
-@property VLCTrackButton *refreshButton;
-@property VLCTrackButton *editButton;
+@property VLCRedesignPanelButton *refreshButton;
+@property VLCRedesignPanelButton *editButton;
 @property NSDictionary<NSString *, NSURL *> *externalURLs;
-@property VLCTrackButton *preferencesButton;
+@property VLCRedesignPanelButton *preferencesButton;
 @property NSScrollView *bodyScroll;
 @property NSScrollView *tracksScroll;
 @property NSScrollView *devicesScroll;
-@property NSArray<VLCTrackButton *> *trackRows;
-@property NSArray<VLCTrackButton *> *deviceRows;
+@property NSArray<VLCRedesignPanelButton *> *trackRows;
+@property NSArray<VLCRedesignPanelButton *> *deviceRows;
 @end
 
 @implementation VLCRedesignTrackPanel
@@ -129,7 +63,7 @@ static NSImage *VLCTrackAsset(NSString *role)
     NSMutableArray *tabs = [NSMutableArray array];
     NSArray *titles = @[_NS("Video"),_NS("Audio"),_NS("Subtitles")];
     for (NSInteger i=0;i<3;i++) {
-        VLCTrackButton *tab = [[VLCTrackButton alloc] init];
+        VLCRedesignPanelButton *tab = [[VLCRedesignPanelButton alloc] init];
         tab.tab = YES; tab.title = titles[i]; tab.accessibilityLabel = titles[i];
         tab.activate = ^{ weakSelf.selectedTab = i; };
         [_header addSubview:tab]; [tabs addObject:tab];
@@ -140,17 +74,17 @@ static NSImage *VLCTrackAsset(NSString *role)
     _divider = [[NSImageView alloc] init]; _divider.image = VLCTrackAsset(@"divider");
     _divider.imageScaling = NSImageScaleNone;
     [self addSubview:_divider];
-    _refreshButton = [[VLCTrackButton alloc] init]; _refreshButton.title = @"";
+    _refreshButton = [[VLCRedesignPanelButton alloc] init]; _refreshButton.title = @"";
     _refreshButton.image = VLCTrackAsset(@"refresh");
     _refreshButton.toolTip = _refreshButton.accessibilityLabel = _NS("Refresh audio devices");
     _refreshButton.activate = ^{ [weakSelf refreshOrImport]; };
     [self addSubview:_refreshButton];
-    _editButton = [[VLCTrackButton alloc] init]; _editButton.title = @"";
+    _editButton = [[VLCRedesignPanelButton alloc] init]; _editButton.title = @"";
     _editButton.image = VLCTrackAsset(@"edit");
     _editButton.toolTip = _editButton.accessibilityLabel = _NS("Open selected external subtitle in a text editor");
     _editButton.activate = ^{ [weakSelf editExternalSubtitle]; };
     [self addSubview:_editButton];
-    _preferencesButton = [[VLCTrackButton alloc] init];
+    _preferencesButton = [[VLCRedesignPanelButton alloc] init];
     _preferencesButton.footer = YES; _preferencesButton.title = _NS("Show Preferences");
     _preferencesButton.activate = ^{ if (weakSelf.showPreferences) weakSelf.showPreferences(); };
     [self addSubview:_preferencesButton];
@@ -190,9 +124,9 @@ static NSImage *VLCTrackAsset(NSString *role)
     [_tracksScroll.contentView scrollToPoint:NSZeroPoint];
 }
 - (void)playerChanged:(NSNotification *)notification { [self refresh]; }
-- (VLCTrackButton *)row:(NSString *)title selected:(BOOL)selected action:(void (^)(void))action
+- (VLCRedesignPanelButton *)row:(NSString *)title selected:(BOOL)selected action:(void (^)(void))action
 {
-    VLCTrackButton *row = [[VLCTrackButton alloc] init]; row.title = title;
+    VLCRedesignPanelButton *row = [[VLCRedesignPanelButton alloc] init]; row.title = title;
     row.toolTip = row.accessibilityLabel = title;
     row.state = selected ? NSControlStateValueOn : NSControlStateValueOff;
     row.selectionImage = VLCTrackAsset(@"check"); row.activate = action;
@@ -280,12 +214,12 @@ static NSImage *VLCTrackAsset(NSString *role)
     [rows addObject:[self row:_NS("None") selected:!anySelected action:^{ [weakSelf.player unselectTracksFromCategory:category]; }]];
     for (VLCTrackMetaData *track in tracks) {
         NSURL *externalURL = self.selectedTab == 2 ? [self externalURLForTrack:track] : nil;
-        VLCTrackButton *row = [self row:externalURL.lastPathComponent ?: track.name selected:track.selected action:^{ [weakSelf.player selectTrack:track exclusively:YES]; }];
+        VLCRedesignPanelButton *row = [self row:externalURL.lastPathComponent ?: track.name selected:track.selected action:^{ [weakSelf.player selectTrack:track exclusively:YES]; }];
         [(externalURL ? externalRows : rows) addObject:row];
         if (externalURL.isFileURL && track.selected && [@[@"srt",@"ass",@"ssa",@"vtt",@"sub",@"txt",@"ttml",@"smi"] containsObject:externalURL.pathExtension.lowercaseString]) canEdit = YES;
     }
     _trackRows = rows;
-    for (VLCTrackButton *row in rows) { row.enabled = self.player.currentMedia != nil; [_tracksScroll.documentView addSubview:row]; }
+    for (VLCRedesignPanelButton *row in rows) { row.enabled = self.player.currentMedia != nil; [_tracksScroll.documentView addSubview:row]; }
     NSMutableArray *devices = [NSMutableArray array];
     if (self.selectedTab == 1) {
         audio_output_t *output = self.player.mainAudioOutput;
@@ -309,7 +243,7 @@ static NSImage *VLCTrackAsset(NSString *role)
             free(current); free(ids); free(names); aout_Release(output);
         }
         if (!devices.count) {
-            VLCTrackButton *empty = [self row:_NS("No audio output available") selected:NO action:nil];
+            VLCRedesignPanelButton *empty = [self row:_NS("No audio output available") selected:NO action:nil];
             empty.enabled = NO; [devices addObject:empty];
         }
     }
@@ -322,12 +256,12 @@ static NSImage *VLCTrackAsset(NSString *role)
     _deviceRows = devices;
     for (NSView *row in devices) [_devicesScroll.documentView addSubview:row];
     self.needsLayout = YES;
-    for (VLCTrackButton *row in _trackRows)
+    for (VLCRedesignPanelButton *row in _trackRows)
         if (focusedTrack && [row.title isEqualToString:focusedTrack]) [self.window makeFirstResponder:row];
-    for (VLCTrackButton *row in _deviceRows)
+    for (VLCRedesignPanelButton *row in _deviceRows)
         if (focusedDevice && [row.title isEqualToString:focusedDevice]) [self.window makeFirstResponder:row];
 }
-- (void)layoutRows:(NSArray<VLCTrackButton *> *)rows scroll:(NSScrollView *)scroll
+- (void)layoutRows:(NSArray<VLCRedesignPanelButton *> *)rows scroll:(NSScrollView *)scroll
 {
     CGFloat width = NSWidth(scroll.contentView.bounds);
     scroll.documentView.frame = NSMakeRect(0,0,width,MAX(NSHeight(scroll.contentView.bounds),(rows.count ? rows.count*44-12 : 0)));

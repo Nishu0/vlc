@@ -8,6 +8,7 @@
 #import "VLCRedesignAppearance.h"
 #import "VLCRedesignTextLayout.h"
 #import "VLCRedesignTrackPanel.h"
+#import "VLCRedesignQueuePanel.h"
 #import "extensions/NSString+Helpers.h"
 #import "library/VLCInputItem.h"
 #import "library/VLCLibraryWindow.h"
@@ -63,12 +64,13 @@ static NSImage *VLCPlayerAsset(NSString *role)
 }
 - (void)drawRect:(NSRect)dirtyRect
 {
-    if (self.transport || self.highlighted || self.selected) {
+    BOOL hasActiveIcon = [@[@"queue",@"audio",@"subtitles",@"settings"] containsObject:self.assetRole];
+    if (self.transport || self.highlighted || (self.selected && !hasActiveIcon)) {
         NSColor *color = self.transport ? (self.playing ? [VLCRedesignAppearance colorWithRGB:0x6B6B6B] : VLCRedesignAppearance.accentColor) : VLCRedesignAppearance.borderColor;
         [color setFill];
         [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:self.transport ? 6 : 4 yRadius:self.transport ? 6 : 4] fill];
     }
-    NSImage *image = self.image;
+    NSImage *image = self.selected && hasActiveIcon ? VLCPlayerResource([@"VLC-redesign-player-active-" stringByAppendingString:self.assetRole]) : self.image;
     if (self.playing && self.transport)
         image = VLCPlayerResource(@"VLC-redesign-player-pause");
     NSSize size = image.size;
@@ -247,6 +249,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 @property BOOL showRemaining;
 @property BOOL menuOpen;
 @property VLCRedesignTrackPanel *trackPanel;
+@property VLCRedesignQueuePanel *queuePanel;
 @property id panelEventMonitor;
 @end
 
@@ -429,6 +432,10 @@ static NSImage *VLCPlayerAsset(NSString *role)
         CGFloat panelHeight = MIN(524, MAX(180,height-barHeight-60));
         _trackPanel.frame = NSMakeRect(MAX(10,width-420),MAX(40,height-barHeight-20-panelHeight),MIN(400,MAX(0,width-40)),panelHeight);
     }
+    if (_queuePanel) {
+        CGFloat panelHeight = MIN(946, MAX(180,height-barHeight-60));
+        _queuePanel.frame = NSMakeRect(MAX(10,width-420),MAX(40,height-barHeight-20-panelHeight),MIN(400,MAX(0,width-40)),panelHeight);
+    }
     _bottomBar.needsDisplay = YES;
     for (NSView *control in _bottomBar.subviews) control.needsDisplay = YES;
     [self updateVisibility];
@@ -487,7 +494,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 - (BOOL)mouseOnControls
 {
     NSPoint point = [self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:nil];
-    return NSPointInRect(point,_topBar.frame) || NSPointInRect(point,_bottomBar.frame) || self.menuOpen || self.trackPanel != nil;
+    return NSPointInRect(point,_topBar.frame) || NSPointInRect(point,_bottomBar.frame) || self.menuOpen || self.trackPanel != nil || self.queuePanel != nil;
 }
 - (void)updateVisibility
 {
@@ -495,15 +502,10 @@ static NSImage *VLCPlayerAsset(NSString *role)
     NSPoint point = [self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:nil];
     BOOL fullscreen = self.player.fullscreen;
     BOOL inside = NSPointInRect(point,self.bounds);
-    if ([self.window isKindOfClass:VLCLibraryWindow.class]) {
-        BOOL selected = !((VLCLibraryWindow *)self.window).splitViewController.multifunctionSidebarItem.collapsed;
-        if (_queueButton.selected != selected) {
-            _queueButton.selected = selected;
-            _queueButton.needsDisplay = YES;
-        }
-    }
-    _topBar.hidden = fullscreen && !self.menuOpen && !self.trackPanel && !(inside && point.y < 56);
-    _bottomBar.hidden = fullscreen && !self.menuOpen && !self.trackPanel && !(inside && point.y > NSHeight(self.bounds)-NSHeight(_bottomBar.frame)-16);
+    BOOL queueSelected = self.queuePanel != nil;
+    if (_queueButton.selected != queueSelected) { _queueButton.selected = queueSelected; _queueButton.needsDisplay = YES; }
+    _topBar.hidden = fullscreen && !self.menuOpen && !self.trackPanel && !self.queuePanel && !(inside && point.y < 56);
+    _bottomBar.hidden = fullscreen && !self.menuOpen && !self.trackPanel && !self.queuePanel && !(inside && point.y > NSHeight(self.bounds)-NSHeight(_bottomBar.frame)-16);
 }
 
 #pragma mark - Real player and window actions
@@ -534,10 +536,13 @@ static NSImage *VLCPlayerAsset(NSString *role)
 - (void)toggleRemaining:(id)sender { self.showRemaining = !self.showRemaining; [self timeChanged:nil]; }
 - (void)openQueue:(id)sender
 {
-    if ([self.window isKindOfClass:VLCLibraryWindow.class])
-        [self.videoController togglePlayQueue:sender];
-    else
-        [VLCMain.sharedInstance.mainMenu showPlayQueue:sender];
+    if (_queuePanel) { [self closePlayerPanels]; return; }
+    [self closePlayerPanels];
+    _queuePanel = [[VLCRedesignQueuePanel alloc] init];
+    [self addSubview:_queuePanel];
+    [self installPanelEventMonitor];
+    self.needsLayout = YES;
+    [self updateVisibility];
 }
 - (void)openLibrary:(id)sender { [self.videoController returnToLibrary:sender]; }
 - (void)openFolder:(id)sender
@@ -552,18 +557,41 @@ static NSImage *VLCPlayerAsset(NSString *role)
     self.menuOpen = NO;
     [self updateVisibility];
 }
-- (void)closeTrackPanel
+- (void)closePlayerPanels
 {
     [_trackPanel removeFromSuperview];
     _trackPanel = nil;
+    [_queuePanel removeFromSuperview]; _queuePanel = nil;
+    _queueButton.selected = NO; _queueButton.needsDisplay = YES;
     _audioButton.selected = _subtitlesButton.selected = NO;
     _audioButton.needsDisplay = _subtitlesButton.needsDisplay = YES;
     if (_panelEventMonitor) { [NSEvent removeMonitor:_panelEventMonitor]; _panelEventMonitor = nil; }
     [self updateVisibility];
 }
+- (void)installPanelEventMonitor
+{
+    if (_panelEventMonitor) return;
+    __weak typeof(self) weakSelf = self;
+    _panelEventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown|NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
+        typeof(self) strongSelf = weakSelf;
+        if (!strongSelf || event.window != strongSelf.window) return event;
+        if (event.type == NSEventTypeKeyDown && event.keyCode == 53) {
+            [strongSelf closePlayerPanels]; return nil;
+        }
+        if (event.type == NSEventTypeLeftMouseDown) {
+            NSView *panel = strongSelf.trackPanel ?: strongSelf.queuePanel;
+            NSPoint point = [strongSelf convertPoint:event.locationInWindow fromView:nil];
+            NSPoint bottom = [strongSelf.bottomBar convertPoint:event.locationInWindow fromView:nil];
+            BOOL tool = NSPointInRect(bottom,strongSelf.audioButton.frame) || NSPointInRect(bottom,strongSelf.subtitlesButton.frame) || NSPointInRect(bottom,strongSelf.queueButton.frame);
+            if (panel && !NSPointInRect(point,panel.frame) && !tool) [strongSelf closePlayerPanels];
+        }
+        return event;
+    }];
+}
 - (void)showTracks:(NSInteger)tab
 {
-    if (_trackPanel && _trackPanel.selectedTab == tab) { [self closeTrackPanel]; return; }
+    if (_trackPanel && _trackPanel.selectedTab == tab) { [self closePlayerPanels]; return; }
+    if (_queuePanel) [self closePlayerPanels];
     if (!_trackPanel) {
         _trackPanel = [[VLCRedesignTrackPanel alloc] init];
         __weak typeof(self) weakSelf = self;
@@ -573,25 +601,11 @@ static NSImage *VLCPlayerAsset(NSString *role)
             weakSelf.audioButton.needsDisplay = weakSelf.subtitlesButton.needsDisplay = YES;
         };
         _trackPanel.showPreferences = ^{
-            [weakSelf closeTrackPanel];
+            [weakSelf closePlayerPanels];
             [VLCMain.sharedInstance.mainMenu showPreferences:nil];
         };
         [self addSubview:_trackPanel];
-        _panelEventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown|NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
-            typeof(self) strongSelf = weakSelf;
-            if (!strongSelf || event.window != strongSelf.window) return event;
-            if (event.type == NSEventTypeKeyDown && event.keyCode == 53) {
-                [strongSelf closeTrackPanel]; return nil;
-            }
-            if (event.type == NSEventTypeLeftMouseDown) {
-                NSPoint point = [strongSelf convertPoint:event.locationInWindow fromView:nil];
-                NSPoint bottom = [strongSelf.bottomBar convertPoint:event.locationInWindow fromView:nil];
-                if (!NSPointInRect(point,strongSelf.trackPanel.frame) &&
-                    !NSPointInRect(bottom,strongSelf.audioButton.frame) && !NSPointInRect(bottom,strongSelf.subtitlesButton.frame))
-                    [strongSelf closeTrackPanel];
-            }
-            return event;
-        }];
+        [self installPanelEventMonitor];
     }
     _trackPanel.selectedTab = tab;
     _audioButton.selected = tab == 1;
@@ -610,6 +624,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 }
 - (void)openSettings:(NSView *)sender
 {
+    [self closePlayerPanels];
     VLCMainMenu *main = VLCMain.sharedInstance.mainMenu;
     NSMenu *menu = [[NSMenu alloc] initWithTitle:_NS("Playback settings")];
     for (NSArray *entry in @[@[_NS("Playback"), main.controlsMenu],@[_NS("Video"),main.videoMenu],@[_NS("Audio"),main.audioMenu],@[_NS("Subtitles"),main.subtitlesMenu]]) {

@@ -355,5 +355,117 @@
     "resource": "VLC-redesign-tracks-add.svg",
     "role": "tracks-add",
     "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "b3f6a.svg",
+    "resource": "VLC-redesign-queue-queue-on.svg",
+    "role": "queue-queue-on",
+    "theme": "dark"
+  },
+  {
+    "screen": "6320:13763",
+    "asset": "06dbe.svg",
+    "resource": "VLC-redesign-queue-queue-off.svg",
+    "role": "queue-queue-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "6320:13763",
+    "asset": "718d6.svg",
+    "resource": "VLC-redesign-queue-bookmarks-on.svg",
+    "role": "queue-bookmarks-on",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "16408.svg",
+    "resource": "VLC-redesign-queue-bookmarks-off.svg",
+    "role": "queue-bookmarks-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "6321:14024",
+    "asset": "e0a56.svg",
+    "resource": "VLC-redesign-queue-chapters-on.svg",
+    "role": "queue-chapters-on",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "75a84.svg",
+    "resource": "VLC-redesign-queue-chapters-off.svg",
+    "role": "queue-chapters-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "c1afe.svg",
+    "resource": "VLC-redesign-queue-sort.svg",
+    "role": "queue-sort",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "5ba02.svg",
+    "resource": "VLC-redesign-queue-repeat.svg",
+    "role": "queue-repeat",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "be41d.svg",
+    "resource": "VLC-redesign-queue-shuffle.svg",
+    "role": "queue-shuffle",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "d1dfc.svg",
+    "resource": "VLC-redesign-queue-remove.svg",
+    "role": "queue-remove",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "97a9d.svg",
+    "resource": "VLC-redesign-queue-add.svg",
+    "role": "queue-add",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "b187a.svg",
+    "resource": "VLC-redesign-queue-grip.svg",
+    "role": "queue-grip",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:1781",
+    "asset": "ff804.svg",
+    "resource": "VLC-redesign-player-active-queue.svg",
+    "role": "active-queue",
+    "theme": "dark"
+  },
+  {
+    "screen": "496:2495",
+    "asset": "5f3f8.svg",
+    "resource": "VLC-redesign-player-active-audio.svg",
+    "role": "active-audio",
+    "theme": "dark"
+  },
+  {
+    "screen": "491:2216",
+    "asset": "4d76e.svg",
+    "resource": "VLC-redesign-player-active-subtitles.svg",
+    "role": "active-subtitles",
+    "theme": "dark"
+  },
+  {
+    "screen": "763:1958",
+    "asset": "85ff4.svg",
+    "resource": "VLC-redesign-player-active-settings.svg",
+    "role": "active-settings",
+    "theme": "dark"
   }
 ]
