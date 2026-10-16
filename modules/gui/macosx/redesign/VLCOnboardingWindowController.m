@@ -65,45 +65,6 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
 }
 @end
 
-@interface VLCOnboardingFolderCell : NSTextFieldCell
-@end
-
-@implementation VLCOnboardingFolderCell
-- (NSRect)drawingRectForBounds:(NSRect)bounds
-{
-    NSRect rect = [super drawingRectForBounds:bounds];
-    CGFloat lineHeight = ceil(self.font.ascender - self.font.descender);
-    if (NSHeight(rect) <= lineHeight)
-        return rect;
-
-    NSString *text = self.stringValue.length ? self.stringValue : self.placeholderString;
-    NSAttributedString *title = [[NSAttributedString alloc] initWithString:text ?: @""
-        attributes:@{NSFontAttributeName:self.font}];
-    CTLineRef line = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)title);
-    CGFloat inkMidY = CGRectGetMidY(CTLineGetBoundsWithOptions(line, kCTLineBoundsUseGlyphPathBounds));
-    CFRelease(line);
-    /* The field editor adds descender padding below the visible glyphs. */
-    CGFloat top = (NSHeight(rect) / 2) + inkMidY - ceil(self.font.ascender) + self.font.descender / 2;
-    rect.origin.y += self.controlView.flipped ? top : NSHeight(rect) - top - lineHeight;
-    rect.size.height = lineHeight;
-    return rect;
-}
-
-- (void)selectWithFrame:(NSRect)rect inView:(NSView *)view editor:(NSText *)editor
-              delegate:(id)delegate start:(NSInteger)start length:(NSInteger)length
-{
-    [super selectWithFrame:[self drawingRectForBounds:rect] inView:view editor:editor
-                  delegate:delegate start:start length:length];
-}
-
-- (void)editWithFrame:(NSRect)rect inView:(NSView *)view editor:(NSText *)editor
-            delegate:(id)delegate event:(NSEvent *)event
-{
-    [super editWithFrame:[self drawingRectForBounds:rect] inView:view editor:editor
-                delegate:delegate event:event];
-}
-@end
-
 @interface VLCOnboardingThemeButton : NSButton
 @property NSInteger themeIndex;
 @property BOOL selectedTheme;
@@ -359,7 +320,7 @@ static NSString * const VLCOnboardingCompletedKey = @"VLCRedesignOnboardingCompl
     NSTextField *caption = [self label:_NS("Choose a Media Folder to get started with")
                                   size:14 weight:NSFontWeightRegular color:VLCRedesignAppearance.subduedColor];
     self.folderField = [[NSTextField alloc] init];
-    self.folderField.cell = [[VLCOnboardingFolderCell alloc] initTextCell:@""];
+    self.folderField.cell = [[VLCRedesignAlignedTextFieldCell alloc] initTextCell:@""];
     self.folderField.editable = YES;
     self.folderField.selectable = YES;
     self.folderField.translatesAutoresizingMaskIntoConstraints = NO;

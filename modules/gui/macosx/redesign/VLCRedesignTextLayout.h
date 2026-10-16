@@ -15,4 +15,8 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
 @interface VLCRedesignAlignedLabel : NSTextField
 @end
 
+/* Native editable fields share the same visible-glyph vertical alignment. */
+@interface VLCRedesignAlignedTextFieldCell : NSTextFieldCell
+@end
+
 NS_ASSUME_NONNULL_END

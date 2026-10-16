@@ -24,6 +24,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class VLCOpenInputMetadata;
+
 @protocol VLCDragDropTarget
 
 @required
@@ -36,6 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) id<VLCDragDropTarget> dropTarget;
 
 + (BOOL)handlePasteboardFromDragSessionAsPlayQueueItems:(NSPasteboard *)pasteboard;
++ (NSArray<VLCOpenInputMetadata *> *)inputMetadataFromPasteboard:(NSPasteboard *)pasteboard;
 - (void)setupDragRecognition;
 
 @end

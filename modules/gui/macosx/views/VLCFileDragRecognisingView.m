@@ -57,6 +57,14 @@
         return YES;
     }
 
+    NSArray<VLCOpenInputMetadata *> *metadata = [self inputMetadataFromPasteboard:pasteboard];
+    if (metadata.count == 0) return NO;
+    [VLCMain.sharedInstance.playQueueController addPlayQueueItems:metadata];
+    return YES;
+}
+
++ (NSArray<VLCOpenInputMetadata *> *)inputMetadataFromPasteboard:(NSPasteboard *)pasteboard
+{
     NSMutableArray<VLCOpenInputMetadata *> * const URLMetadataArray = [NSMutableArray array];
     for (NSPasteboardItem * const pboardItem in pasteboard.pasteboardItems) {
         NSString * const URLString = [pboardItem stringForType:NSPasteboardTypeFileURL] ?:
@@ -89,19 +97,18 @@
     }
 
     if (URLMetadataArray.count > 0) {
-        [VLCMain.sharedInstance.playQueueController addPlayQueueItems:URLMetadataArray];
-        return YES;
+        return URLMetadataArray;
     }
 
     const id propertyList = [pasteboard propertyListForType:NSFilenamesPboardType];
     if (propertyList == nil) {
-        return NO;
+        return @[];
     }
 
     NSArray * const values = propertyList;
     const NSUInteger valueCount = values.count;
     if (valueCount <= 0) {
-        return NO;
+        return @[];
     }
 
     NSMutableArray * const metadataArray = [NSMutableArray arrayWithCapacity:valueCount];
@@ -113,8 +120,7 @@
         }
     }
 
-    [VLCMain.sharedInstance.playQueueController addPlayQueueItems:metadataArray];
-    return YES;
+    return metadataArray;
 }
 
 - (instancetype)init

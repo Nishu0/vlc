@@ -15,6 +15,7 @@
 #import "playqueue/VLCPlayQueueModel.h"
 #import "playqueue/VLCPlayQueueItem.h"
 #import "windows/VLCOpenInputMetadata.h"
+#import "views/VLCFileDragRecognisingView.h"
 #import "library/VLCLibraryDataTypes.h"
 #import "panels/bookmarks/VLCBookmark.h"
 #import <vlc_media_library.h>
@@ -424,7 +425,14 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
 - (BOOL)tableView:(NSTableView *)tableView acceptDrop:(id<NSDraggingInfo>)info row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
 {
     msg_Dbg(getIntf(), "redesigned queue accepts drag to row %ld", row);
-    return _selectedTab == 0 && [_dragDataSource tableView:tableView acceptDrop:info row:row dropOperation:operation];
+    if (_selectedTab != 0) return NO;
+    if ([info.draggingPasteboard availableTypeFromArray:@[VLCPlaylistItemPasteboardType,VLCMediaLibraryMediaItemPasteboardType,VLCMediaLibraryMediaItemUTI]])
+        return [_dragDataSource tableView:tableView acceptDrop:info row:row dropOperation:operation];
+    NSArray<VLCOpenInputMetadata *> *metadata = [VLCFileDragRecognisingView inputMetadataFromPasteboard:info.draggingPasteboard];
+    if (!metadata.count) return NO;
+    size_t position = row < 0 ? NSUIntegerMax : MIN((size_t)row,self.queue.playQueueModel.numberOfPlayQueueItems);
+    [self.queue addPlayQueueItems:metadata atPosition:position startPlayback:NO];
+    return YES;
 }
 - (void)layout
 {
