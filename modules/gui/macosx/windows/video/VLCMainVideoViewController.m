@@ -36,6 +36,7 @@
 #import "library/VLCLibraryWindowSplitViewController.h"
 
 #import "main/VLCMain.h"
+#import "redesign/VLCRedesignPlayerChrome.h"
 
 #import "playqueue/VLCPlayerController.h"
 #import "playqueue/VLCPlayQueueController.h"
@@ -110,6 +111,8 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     PIPVoutViewController *_voutViewController;
 
     BOOL _isFadingIn;
+    VLCRedesignPlayerChrome *_redesignedPlayer;
+    NSView *_legacyControlsView;
 }
 
 @property NSWindow *retainedWindow;
@@ -246,7 +249,31 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
             [controlsBackgroundView applyConstraintsToFillSuperview];
         }
     }
+
+    if (!self.classic) {
+        _redesignedPlayer = [[VLCRedesignPlayerChrome alloc] initWithVideoController:self];
+        _redesignedPlayer.translatesAutoresizingMaskIntoConstraints = NO;
+        /* Keep the legacy outlets alive, but remove their layout constraints from
+         * the player. Hidden controls still contribute fitting-size requirements. */
+        _legacyControlsView = self.mainControlsView;
+        [_legacyControlsView removeFromSuperview];
+        [self.view addSubview:_redesignedPlayer];
+        [_redesignedPlayer applyConstraintsToFillSuperview];
+        [_redesignedPlayer mountVideoView:self.voutContainingView];
+        self.mainControlsView.hidden = YES;
+        NSView *indicators = self.loadingIndicator.superview;
+        [indicators removeFromSuperview];
+        [self.view addSubview:indicators];
+        [NSLayoutConstraint activateConstraints:@[
+            [indicators.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+            [indicators.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor]
+        ]];
+        _autohideControls = NO;
+        [self stopAutohideTimer];
+    }
 }
+
+- (BOOL)usesRedesignedPlayer { return !self.classic; }
 
 - (void)updateLyricsInsets
 {
@@ -304,6 +331,11 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
         [self.audioDecorativeView removeFromSuperview];
     }
 
+    if (_redesignedPlayer) {
+        [_redesignedPlayer updatePlayer];
+        return;
+    }
+
     if (decorativeViewVisible) {
         [self setAutohideControls:NO];
         self.centerButtonStackInViewConstraint.active = NO;
@@ -328,6 +360,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)applyAudioDecorativeViewForegroundCoverArtViewConstraints
 {
+    if (_redesignedPlayer) return;
     if (self.classic) {
         return;
     }
@@ -408,6 +441,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (BOOL)mouseOnControls
 {
+    if (_redesignedPlayer) return _redesignedPlayer.mouseOnControls;
     NSPoint mousePos = [self.view.window mouseLocationOutsideOfEventStream];
 
     return [_centralControlsStackView mouse:mousePos inRect:_centralControlsStackView.frame] ||
@@ -446,6 +480,10 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)hideControls
 {
+    if (_redesignedPlayer) {
+        [_redesignedPlayer updateVisibility];
+        return;
+    }
     if (self.voutTaken) {
         return;
     }
@@ -491,6 +529,10 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)showControls
 {
+    if (_redesignedPlayer) {
+        [_redesignedPlayer updateVisibility];
+        return;
+    }
     if (self.voutTaken) {
         return;
     }
@@ -568,6 +610,7 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)updateLibraryControls
 {
+    if (_redesignedPlayer) return;
     const NSWindow * const viewWindow = self.view.window;
     const CGFloat windowTitlebarHeight = viewWindow.titlebarHeight;
 
@@ -740,6 +783,11 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 - (void)returnVideoView:(NSView *)videoView
 {
     NSParameterAssert(videoView != nil);
+    if (_redesignedPlayer) {
+        [_redesignedPlayer mountVideoView:videoView];
+        self.voutTaken = NO;
+        return;
+    }
     [videoView removeFromSuperview];
     [self.view addSubview:videoView
                positioned:NSWindowBelow

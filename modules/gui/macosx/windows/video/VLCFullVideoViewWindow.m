@@ -131,6 +131,10 @@
     self.titlebarAppearsTransparent = YES;
 
     _autohideTitlebar = YES;
+    if (self.videoViewController.usesRedesignedPlayer) {
+        for (NSNumber *button in @[@(NSWindowCloseButton), @(NSWindowMiniaturizeButton), @(NSWindowZoomButton)])
+            [self standardWindowButton:button.integerValue].hidden = YES;
+    }
     [self showTitleBar];
 }
 
@@ -140,6 +144,10 @@
     self.titlebarAppearsTransparent = NO;
 
     _autohideTitlebar = NO;
+    if (self.videoViewController.usesRedesignedPlayer) {
+        for (NSNumber *button in @[@(NSWindowCloseButton), @(NSWindowMiniaturizeButton), @(NSWindowZoomButton)])
+            [self standardWindowButton:button.integerValue].hidden = NO;
+    }
     [self showTitleBar];
 }
 

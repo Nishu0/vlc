@@ -17,6 +17,36 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
                                               effectiveRange:NULL] mutableCopy] ?: [[NSMutableParagraphStyle alloc] init];
     paragraph.alignment = alignment;
     [content addAttribute:NSParagraphStyleAttributeName value:paragraph range:NSMakeRange(0, content.length)];
+    if (paragraph.lineBreakMode == NSLineBreakByTruncatingHead ||
+        paragraph.lineBreakMode == NSLineBreakByTruncatingMiddle ||
+        paragraph.lineBreakMode == NSLineBreakByTruncatingTail) {
+        CTLineRef line = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)content);
+        NSAttributedString *ellipsis = [[NSAttributedString alloc] initWithString:@"…" attributes:[content attributesAtIndex:0 effectiveRange:NULL]];
+        CTLineRef token = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)ellipsis);
+        CTLineTruncationType type = paragraph.lineBreakMode == NSLineBreakByTruncatingMiddle ? kCTLineTruncationMiddle :
+                                   paragraph.lineBreakMode == NSLineBreakByTruncatingHead ? kCTLineTruncationStart : kCTLineTruncationEnd;
+        CTLineRef truncated = CTLineCreateTruncatedLine(line, NSWidth(bounds), type, token);
+        CTLineRef visible = truncated ?: line;
+        CGRect ink = CTLineGetBoundsWithOptions(visible, kCTLineBoundsUseGlyphPathBounds);
+        CGFloat x = NSMinX(bounds) - CGRectGetMinX(ink);
+        if (alignment == NSTextAlignmentCenter) x = NSMidX(bounds) - CGRectGetMidX(ink);
+        else if (alignment == NSTextAlignmentRight) x = NSMaxX(bounds) - CGRectGetMaxX(ink);
+        CGContextRef context = NSGraphicsContext.currentContext.CGContext;
+        CGContextSaveGState(context);
+        CGContextClipToRect(context, bounds);
+        if (flipped) {
+            CGContextTranslateCTM(context, 0, NSMinY(bounds) + NSMaxY(bounds));
+            CGContextScaleCTM(context, 1, -1);
+        }
+        CGContextSetTextMatrix(context, CGAffineTransformIdentity);
+        CGContextSetTextPosition(context, x, NSMidY(bounds) - CGRectGetMidY(ink));
+        CTLineDraw(visible, context);
+        CGContextRestoreGState(context);
+        if (truncated) CFRelease(truncated);
+        CFRelease(token);
+        CFRelease(line);
+        return;
+    }
     NSFont *font = [content attribute:NSFontAttributeName atIndex:0 effectiveRange:NULL] ?:
                    [NSFont systemFontOfSize:NSFont.systemFontSize];
     CTFramesetterRef setter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)content);
@@ -83,6 +113,11 @@ void VLCDrawAlignedText(NSAttributedString *text, NSRect bounds, BOOL flipped, N
     NSRange range = NSMakeRange(0, text.length);
     [text addAttribute:NSFontAttributeName value:self.font range:range];
     [text addAttribute:NSForegroundColorAttributeName value:self.textColor range:range];
+    if (self.maximumNumberOfLines == 1) {
+        NSMutableParagraphStyle *paragraph = [[NSMutableParagraphStyle alloc] init];
+        paragraph.lineBreakMode = self.lineBreakMode;
+        [text addAttribute:NSParagraphStyleAttributeName value:paragraph range:range];
+    }
     VLCDrawAlignedText(text, self.bounds, self.flipped, self.alignment);
 }
 @end

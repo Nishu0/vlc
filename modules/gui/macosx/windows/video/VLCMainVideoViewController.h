@@ -71,6 +71,7 @@ extern NSString * const VLCUseClassicVideoPlayerLayoutKey;
 @property (readwrite, nonatomic) BOOL displayLibraryControls;
 @property (readonly) BOOL mouseOnControls;
 @property (readonly) BOOL pipIsActive;
+@property (readonly) BOOL usesRedesignedPlayer;
 
 @property (readonly) VLCPlaybackEndViewController *playbackEndViewController;
 @property (readwrite) void (^endViewDismissHandler)(void);

@@ -104,6 +104,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignAppearance.m \
 	gui/macosx/redesign/VLCRedesignTextLayout.h \
 	gui/macosx/redesign/VLCRedesignTextLayout.m \
+	gui/macosx/redesign/VLCRedesignPlayerChrome.h \
+	gui/macosx/redesign/VLCRedesignPlayerChrome.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \
@@ -660,6 +662,43 @@ libmacosx_plugin_la_RES = \
 	gui/macosx/Resources/redesign/Inter-SemiBold.ttf \
 	gui/macosx/Resources/redesign/Inter-LICENSE.txt \
 	gui/macosx/Resources/redesign/README.txt \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-logo.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-menu.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-sidebar.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-divider.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-folder.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-minimize.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-maximize.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-fullscreen.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-close.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-play.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-speaker.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-audio.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-subtitles.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-settings.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-queue.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-previous.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-next.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-volume-background.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-dark-volume-gradient.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-logo.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-menu.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-sidebar.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-divider.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-folder.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-minimize.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-maximize.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-fullscreen.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-close.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-play.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-speaker.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-audio.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-subtitles.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-settings.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-queue.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-previous.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-light-next.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-player-pause.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-cone.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-orange.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-red.svg \

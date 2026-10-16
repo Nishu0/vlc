@@ -15,3 +15,8 @@ The original SIL Open Font License is included as Inter-LICENSE.txt.
 
 The video frames, sample filenames, and screenshots in the Figma reference
 are not application assets and are not bundled here.
+
+Main player chrome: screens 247:445 (dark) and 2425:13624 (light).
+The pause state comes from component 848:1713. Exact resource/layer mappings
+are recorded in doc/redesign/player-assets.json. The original volume SVG
+background and gradient are composited with a live volume-dependent clip.

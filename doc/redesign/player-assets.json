@@ -1,0 +1,261 @@
+[
+  {
+    "screen": "247:445",
+    "variable": "imgFrame4",
+    "resource": "VLC-redesign-player-dark-logo.svg",
+    "role": "logo",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame49",
+    "resource": "VLC-redesign-player-dark-menu.svg",
+    "role": "menu",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame3",
+    "resource": "VLC-redesign-player-dark-sidebar.svg",
+    "role": "sidebar",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame5",
+    "resource": "VLC-redesign-player-dark-divider.svg",
+    "role": "divider",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame6",
+    "resource": "VLC-redesign-player-dark-folder.svg",
+    "role": "folder",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame7",
+    "resource": "VLC-redesign-player-dark-minimize.svg",
+    "role": "minimize",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame8",
+    "resource": "VLC-redesign-player-dark-maximize.svg",
+    "role": "maximize",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame9",
+    "resource": "VLC-redesign-player-dark-fullscreen.svg",
+    "role": "fullscreen",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame10",
+    "resource": "VLC-redesign-player-dark-close.svg",
+    "role": "close",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame11",
+    "resource": "VLC-redesign-player-dark-play.svg",
+    "role": "play",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame12",
+    "resource": "VLC-redesign-player-dark-speaker.svg",
+    "role": "speaker",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame13",
+    "resource": "VLC-redesign-player-dark-audio.svg",
+    "role": "audio",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame14",
+    "resource": "VLC-redesign-player-dark-subtitles.svg",
+    "role": "subtitles",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame15",
+    "resource": "VLC-redesign-player-dark-settings.svg",
+    "role": "settings",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame16",
+    "resource": "VLC-redesign-player-dark-queue.svg",
+    "role": "queue",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame18",
+    "resource": "VLC-redesign-player-dark-previous.svg",
+    "role": "previous",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgFrame17",
+    "resource": "VLC-redesign-player-dark-next.svg",
+    "role": "next",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgRectangle6",
+    "resource": "VLC-redesign-player-dark-volume-background.svg",
+    "role": "volume-background",
+    "theme": "dark"
+  },
+  {
+    "screen": "247:445",
+    "variable": "imgRectangle8",
+    "resource": "VLC-redesign-player-dark-volume-gradient.svg",
+    "role": "volume-gradient",
+    "theme": "dark"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame4",
+    "resource": "VLC-redesign-player-light-logo.svg",
+    "role": "logo",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame49",
+    "resource": "VLC-redesign-player-light-menu.svg",
+    "role": "menu",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame",
+    "resource": "VLC-redesign-player-light-sidebar.svg",
+    "role": "sidebar",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame2",
+    "resource": "VLC-redesign-player-light-divider.svg",
+    "role": "divider",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame3",
+    "resource": "VLC-redesign-player-light-folder.svg",
+    "role": "folder",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame5",
+    "resource": "VLC-redesign-player-light-minimize.svg",
+    "role": "minimize",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame6",
+    "resource": "VLC-redesign-player-light-maximize.svg",
+    "role": "maximize",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame7",
+    "resource": "VLC-redesign-player-light-fullscreen.svg",
+    "role": "fullscreen",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame8",
+    "resource": "VLC-redesign-player-light-close.svg",
+    "role": "close",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame9",
+    "resource": "VLC-redesign-player-light-play.svg",
+    "role": "play",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame10",
+    "resource": "VLC-redesign-player-light-speaker.svg",
+    "role": "speaker",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame11",
+    "resource": "VLC-redesign-player-light-audio.svg",
+    "role": "audio",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame12",
+    "resource": "VLC-redesign-player-light-subtitles.svg",
+    "role": "subtitles",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame13",
+    "resource": "VLC-redesign-player-light-settings.svg",
+    "role": "settings",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame14",
+    "resource": "VLC-redesign-player-light-queue.svg",
+    "role": "queue",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame18",
+    "resource": "VLC-redesign-player-light-previous.svg",
+    "role": "previous",
+    "theme": "light"
+  },
+  {
+    "screen": "2425:13624",
+    "variable": "imgFrame17",
+    "resource": "VLC-redesign-player-light-next.svg",
+    "role": "next",
+    "theme": "light"
+  },
+  {
+    "screen": "848:1713",
+    "variable": "imgFrame16",
+    "resource": "VLC-redesign-player-pause.svg",
+    "role": "pause",
+    "theme": "both"
+  }
+]
