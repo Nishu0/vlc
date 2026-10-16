@@ -55,7 +55,7 @@ NSImage *VLCRedesignPanelImage(NSString *name)
         NSRectClip(NSMakeRect(8,48,MAX(0,NSWidth(bounds)-16),2));
         [line drawInRect:NSMakeRect((NSWidth(bounds)-line.size.width)/2,48,line.size.width,line.size.height) fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
         [NSGraphicsContext restoreGraphicsState];
-    } else if (self.state == NSControlStateValueOn) {
+    } else if (self.selectionImage && self.state == NSControlStateValueOn) {
         [self.selectionImage drawInRect:NSMakeRect(4,(NSHeight(bounds)-24)/2,24,24) fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
     } else if (self.image) {
         NSSize size = self.image.size;

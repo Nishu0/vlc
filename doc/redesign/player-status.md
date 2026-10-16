@@ -32,7 +32,7 @@ Queue rows use `VLCPlayQueueModel` items, titles, and durations. The current inp
 
 Bookmarks use VLC's shared media-library storage. Adding an unindexed input first registers it as external media. Creation, rename, seek, removal, and reopening use the stored media ID and millisecond time; callbacks update open panels through a weak observer whose registration is removed on teardown. The shared backend now correctly returns success after `addBookmark` succeeds. Chapter rows come from the selected real player title and activate `selectedChapterIndex`; media without chapters displays an empty state.
 
-Native checks created a bookmark at 2:00, renamed it, sought back to it after moving playback, reopened it after restarting VLC, and removed it. A generated three-chapter MKV jumped to 2:00 via Return. The queue plus button appended a 12-second fixture without changing the current input; its total changed from 6:00 to 6:12. Duration sorting placed that fixture first, row activation played it, and removing it restored the 6:00 total and transport availability. A pointer drag moved the second item below the last row, with the live queue order changing. Repeat and shuffle changed the real controller state and were restored. Native plain table styling corrected clipped duration text. Queue rows, bookmark names/times, and chapter numbers/times were visually reviewed. External file/library drops share the native data source but still need a separate pointer-driven acceptance check.
+Native checks created a bookmark at 2:00, renamed it, sought back to it after moving playback, reopened it after restarting VLC, and removed it. A generated three-chapter MKV jumped to 2:00 via Return. The queue plus button appended a 12-second fixture without changing the current input; its total changed from 6:00 to 6:12. Duration sorting placed that fixture first, row activation played it, and removing it restored the 6:00 total and transport availability. A pointer drag moved the second item below the last row, with the live queue order changing. Repeat and shuffle changed the real controller state and were restored. Native plain table styling corrected clipped duration text. Queue rows, bookmark names/times, and chapter numbers/times were visually reviewed. The full-size queue was also visually reviewed. External file/library drops share the native data source but still need a separate pointer-driven acceptance check. A full-width review exposed selected icon buttons disappearing because the radio-button drawing branch consumed their on state; that branch now requires a selection image. A native pixel-render probe failed before the fix (134 icon pixels off, zero on) and passed afterward, while radio selection still rendered correctly.
 
 ## Verification record
 
@@ -51,7 +51,7 @@ Build/runtime logs and generated media remain ignored under `build-macos-baselin
 ## Remaining main-player parts
 
 - Designed compact file/library browser with real navigation, search, and drag/drop.
-- Remaining external file/library drop and full-size queue acceptance checks.
+- Remaining external file/library drop acceptance checks.
 - Four-tab settings inspector and its parameter bindings, including video and playback settings.
 - Hover thumbnails generated for the hovered time, independent of the playing input.
 - Remaining fullscreen edge-hover, keyboard focus, PiP return, and small-window checks.
