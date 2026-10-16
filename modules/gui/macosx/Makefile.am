@@ -79,6 +79,7 @@ libmacosx_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(gui_RPATH) \
 	-Wl,-framework,AVFoundation \
 	-Wl,-framework,Cocoa \
 	-Wl,-framework,CoreAudio \
+	-Wl,-framework,CoreText \
 	-Wl,-framework,CoreGraphics \
 	-Wl,-framework,CoreVideo \
 	-Wl,-framework,IOKit \
@@ -99,6 +100,10 @@ libmacosx_plugin_la_LDFLAGS += -Wl,-framework,Sparkle
 endif
 
 libmacosx_plugin_la_SOURCES = \
+	gui/macosx/redesign/VLCRedesignAppearance.h \
+	gui/macosx/redesign/VLCRedesignAppearance.m \
+	gui/macosx/redesign/VLCOnboardingWindowController.h \
+	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \
 	gui/macosx/coreinteraction/VLCHotkeysController.m \
 	gui/macosx/coreinteraction/VLCVideoFilterHelper.h \
@@ -647,6 +652,36 @@ BUILT_SOURCES += $(libmacosx_plugin_la_XIB_SOURCES:.xib=.nib)
 endif
 
 libmacosx_plugin_la_RES = \
+	gui/macosx/Resources/redesign/Inter-Light.ttf \
+	gui/macosx/Resources/redesign/Inter-Regular.ttf \
+	gui/macosx/Resources/redesign/Inter-Medium.ttf \
+	gui/macosx/Resources/redesign/Inter-SemiBold.ttf \
+	gui/macosx/Resources/redesign/Inter-LICENSE.txt \
+	gui/macosx/Resources/redesign/README.txt \
+	gui/macosx/Resources/redesign/VLC-redesign-cone.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-orange.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-red.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-yellow.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-green.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-cyan.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-blue.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-purple.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-pink.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-gray.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-cone.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-previous.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-play.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-next.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-minimize.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-maximize.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-fullscreen.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-close.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-speaker.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-volume.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-audio.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-subtitles.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-settings.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-preview-queue.svg \
 	gui/macosx/Resources/App-Icons/VLC-Xmas.icns \
 	gui/macosx/Resources/App-Icons/VLC.icns \
 	gui/macosx/Resources/File-Icons/aiff.icns \

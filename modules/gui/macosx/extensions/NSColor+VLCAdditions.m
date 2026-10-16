@@ -21,16 +21,13 @@
  *****************************************************************************/
 
 #import "NSColor+VLCAdditions.h"
+#import "redesign/VLCRedesignAppearance.h"
 
 @implementation NSColor (VLCAdditions)
 
 + (NSColor *)VLCAccentColor
 {
-    if (@available(macOS 10.14, *)) {
-        return [NSColor controlAccentColor];
-    }
-
-    return [NSColor VLCOrangeElementColor];
+    return VLCRedesignAppearance.accentColor;
 }
 
 + (NSColor *)VLCOrangeElementColor

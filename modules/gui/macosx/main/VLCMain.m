@@ -76,6 +76,9 @@
 #import "preferences/prefs.h"
 #import "preferences/VLCSimplePrefsController.h"
 
+#import "redesign/VLCRedesignAppearance.h"
+#import "redesign/VLCOnboardingWindowController.h"
+
 #import "views/VLCPlaybackEndViewController.h"
 
 #import "windows/VLCDetachedAudioWindow.h"
@@ -120,6 +123,7 @@ NSString * const kVLCPreferencesVersion = @"VLCPreferencesVersion";
     VLCConvertAndSaveWindowController *_convertAndSaveWindow;
     VLCClickerManager *_clickerManager;
     VLCDetachedAudioWindow *_detachedAudioWindow;
+    VLCOnboardingWindowController *_onboardingWindowController;
 #ifdef HAVE_SPARKLE
     SPUStandardUpdaterController *_sparkleUpdaterController;
 #endif
@@ -300,6 +304,8 @@ static VLCMain *sharedInstance = nil;
 
         VLCApplication.sharedApplication.delegate = self;
 
+        [VLCRedesignAppearance apply];
+
         _playQueueController = [[VLCPlayQueueController alloc] initWithPlaylist:vlc_intf_GetMainPlaylist(_p_intf)];
         _libraryController = [[VLCLibraryController alloc] init];
         _continuityController = [[VLCPlaybackContinuityController alloc] init];
@@ -380,6 +386,18 @@ static VLCMain *sharedInstance = nil;
 
     _statusBarIcon = [[VLCStatusBarIcon alloc] init:_p_intf];
 
+    NSMenu *helpMenu = _mainmenu.helpMenu;
+    if (helpMenu) {
+        NSMenuItem *welcome = [[NSMenuItem alloc] initWithTitle:_NS("Welcome to VLC…")
+                                                       action:@selector(showOnboarding:)
+                                                keyEquivalent:@""];
+        welcome.target = self;
+        [helpMenu insertItem:welcome atIndex:0];
+        [helpMenu insertItem:NSMenuItem.separatorItem atIndex:1];
+    }
+    if (!VLCOnboardingWindowController.completed)
+        [self showOnboarding:nil];
+
     /* on macOS 11 and later, check whether the user attempts to deploy
      * the x86_64 binary on ARM-64 - if yes, log it */
     if (OSX_BIGSUR_AND_HIGHER) {
@@ -387,6 +405,14 @@ static VLCMain *sharedInstance = nil;
             msg_Warn(getIntf(), "Process is translated!");
         }
     }
+}
+
+- (void)showOnboarding:(id)sender
+{
+    if (!_onboardingWindowController)
+        _onboardingWindowController = [[VLCOnboardingWindowController alloc] init];
+    [_onboardingWindowController showWindow:sender];
+    [_onboardingWindowController.window makeKeyAndOrderFront:sender];
 }
 
 - (int)processIsTranslated
