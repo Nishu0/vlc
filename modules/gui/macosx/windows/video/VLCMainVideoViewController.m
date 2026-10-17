@@ -167,6 +167,20 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     return self;
 }
 
+- (BOOL)showResumeAtPosition:(NSInteger)seconds choice:(void (^)(BOOL))choice
+{
+    [self view];
+    if (_redesignedPlayer == nil)
+        return NO;
+    [_redesignedPlayer showResumeAtPosition:seconds choice:choice];
+    return YES;
+}
+
+- (void)cancelResumePrompt
+{
+    [_redesignedPlayer cancelResumePrompt];
+}
+
 - (void)setupAudioDecorativeView
 {
     _audioDecorativeView = [VLCMainVideoViewAudioMediaDecorativeView fromNibWithOwner:self];

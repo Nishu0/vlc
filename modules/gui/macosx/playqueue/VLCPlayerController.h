@@ -692,6 +692,11 @@ extern const CGFloat VLCVolumeDefault;
  */
 @property (readwrite, nonatomic) float subtitlesFPS;
 
+/** Preferred language codes for future media; changing this does not select a
+ * different track in the current input. Category must be AUDIO_ES or SPU_ES. */
+- (NSString *)preferredLanguageForCategory:(enum es_format_category_e)category;
+- (void)setPreferredLanguage:(NSString *)language forCategory:(enum es_format_category_e)category;
+
 /**
  * a scale factor for text based subtitles, range 10 - 500, default 100
  * @warning this does not have any effect on bitmapped subtitles

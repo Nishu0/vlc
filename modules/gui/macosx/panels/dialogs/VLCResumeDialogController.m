@@ -28,6 +28,9 @@
 #import "extensions/NSString+Helpers.h"
 #import "windows/video/VLCVideoOutputProvider.h"
 #import "library/VLCInputItem.h"
+#import "library/VLCLibraryWindow.h"
+#import "windows/video/VLCMainVideoViewController.h"
+#import "windows/video/VLCVideoWindowCommon.h"
 
 #import <vlc_configuration.h>
 
@@ -38,7 +41,9 @@
     NSTimer *_countdownTimer;
     VLCInputItem *_inputItem;
     NSInteger _lastPosition;
+    __weak VLCMainVideoViewController *_resumeVideoController;
 }
+- (void)finishWithResult:(enum ResumeResult)result;
 @end
 
 @implementation VLCResumeDialogController
@@ -57,6 +62,7 @@
 
 - (void)dealloc
 {
+    [_countdownTimer invalidate];
     [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
@@ -72,23 +78,31 @@
 
 - (void)showWindowWithItem:(VLCInputItem *)inputItem withLastPosition:(NSInteger)pos completionBlock:(CompletionBlock)block
 {
+    [self cancel];
     _inputItem = inputItem;
     _lastPosition = pos;
     _currentResumeTimeout = 10;
     _completionBlock = [block copy];
 
-    [self updateTextLabels];
-
-    _countdownTimer = [NSTimer scheduledTimerWithTimeInterval:1
-                                                       target:self
-                                                     selector:@selector(updateAlertWindow:)
-                                                     userInfo:nil
-                                                      repeats:YES];
-
-    NSWindow *window = [self window];
-    [window setLevel:VLCMain.sharedInstance.voutProvider.currentStatusWindowLevel];
-    [window center];
-    [window makeKeyAndOrderFront:nil];
+    VLCVideoWindowCommon *owner = [NSApp.mainWindow isKindOfClass:VLCVideoWindowCommon.class]
+        ? (VLCVideoWindowCommon *)NSApp.mainWindow : VLCMain.sharedInstance.libraryWindow;
+    VLCMainVideoViewController *videoController = owner.videoViewController;
+    __weak typeof(self) weakSelf = self;
+    BOOL embedded = [videoController showResumeAtPosition:pos choice:^(BOOL continuePlayback) {
+        [weakSelf finishWithResult:continuePlayback ? RESUME_NOW : RESUME_RESTART];
+    }];
+    if (embedded) {
+        _resumeVideoController = videoController;
+    } else {
+        [self updateTextLabels];
+        NSWindow *window = self.window;
+        window.level = VLCMain.sharedInstance.voutProvider.currentStatusWindowLevel;
+        [window center];
+        [window makeKeyAndOrderFront:nil];
+    }
+    _countdownTimer = [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer *__unused timer) {
+        [weakSelf updateAlertWindow:timer];
+    }];
 }
 
 - (void)updateTextLabels
@@ -103,16 +117,15 @@
 
     NSString *labelString = [NSString stringWithFormat:_NS("Playback of \"%@\" will continue at %@"), _inputItem.title, [NSString stringWithTime:_lastPosition]];
     [_descriptionLabel setStringValue:labelString];
-    [_alwaysResumeCheckbox setState:NSOffState];
+    [_alwaysResumeCheckbox setState:NSControlStateValueOff];
 }
 
 - (void)updateAlertWindow:(NSTimer *)timer
 {
     --_currentResumeTimeout;
     if (_currentResumeTimeout <= 0) {
-        [self buttonClicked:_restartButton];
-        [timer invalidate];
-        timer = nil;
+        [self finishWithResult:RESUME_RESTART];
+        return;
     }
 
     NSString *buttonLabel = _NS("Restart playback");
@@ -121,26 +134,22 @@
     [_restartButton setTitle:buttonLabel];
 }
 
+- (void)finishWithResult:(enum ResumeResult)result
+{
+    CompletionBlock completion = _completionBlock;
+    [self cancel];
+    if (completion)
+        completion(result);
+}
+
 - (IBAction)buttonClicked:(id)sender
 {
-    enum ResumeResult resumeResult = RESUME_FAIL;
-
-    if (sender == _restartButton)
-        resumeResult = RESUME_RESTART;
-    else if (sender == _resumeButton)
-        resumeResult = RESUME_NOW;
-
-    [[self window] close];
-
-    if (_completionBlock) {
-        _completionBlock(resumeResult);
-        _completionBlock = nil;
-    }
+    [self finishWithResult:sender == _resumeButton ? RESUME_NOW : RESUME_RESTART];
 }
 
 - (IBAction)resumeSettingChanged:(id)sender
 {
-    int newState = [sender state] == NSOnState ? 1 : 0;
+    int newState = [sender state] == NSControlStateValueOn ? 1 : 0;
     msg_Dbg(getIntf(), "Changing resume setting to %i", newState);
     config_PutInt("macosx-continue-playback", newState);
 }
@@ -154,15 +163,14 @@
 
 - (void)cancel
 {
-    if (![self isWindowLoaded])
-        return;
-
-    if (_countdownTimer != nil) {
-        [_countdownTimer invalidate];
-        _countdownTimer = nil;
-    }
-
-    [self.window close];
+    [_countdownTimer invalidate];
+    _countdownTimer = nil;
+    _completionBlock = nil;
+    _inputItem = nil;
+    [_resumeVideoController cancelResumePrompt];
+    _resumeVideoController = nil;
+    if (self.isWindowLoaded)
+        [self.window close];
 }
 
 @end

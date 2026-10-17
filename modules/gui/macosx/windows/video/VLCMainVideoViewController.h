@@ -35,6 +35,10 @@ extern NSString * const VLCUseClassicVideoPlayerLayoutKey;
 
 @interface VLCMainVideoViewController : NSViewController
 
+/* Returns NO when the classic layout requires the legacy dialog. */
+- (BOOL)showResumeAtPosition:(NSInteger)seconds choice:(void (^)(BOOL continuePlayback))choice;
+- (void)cancelResumePrompt;
+
 @property (readwrite, weak) IBOutlet NSView *voutContainingView;
 
 @property (readwrite, weak) IBOutlet VLCVoutView *voutView;

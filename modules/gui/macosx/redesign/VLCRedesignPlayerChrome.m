@@ -11,6 +11,8 @@
 #import "VLCRedesignTrackPanel.h"
 #import "VLCRedesignQueuePanel.h"
 #import "VLCRedesignCompactBrowser.h"
+#import "VLCRedesignInspector.h"
+#import "VLCRedesignResumePrompt.h"
 #import "library/VLCLibrarySegment.h"
 #import "library/media-source/VLCLibraryMediaSourceViewController.h"
 #import "library/media-source/VLCMediaSourceBaseDataSource.h"
@@ -74,9 +76,10 @@ static NSImage *VLCPlayerAsset(NSString *role)
                                          xRadius:self.transport ? 6 : 4
                                          yRadius:self.transport ? 6 : 4] fill];
     }
-    NSImage *image = self.selected && hasActiveIcon
-                         ? VLCRedesignPanelImage([@"VLC-redesign-player-active-" stringByAppendingString:self.assetRole])
-                         : self.image;
+    NSImage *image =
+        self.selected && hasActiveIcon
+            ? VLCRedesignPanelImage([@"VLC-redesign-player-active-" stringByAppendingString:self.assetRole])
+            : self.image;
     if (self.playing && self.transport)
         image = VLCRedesignPanelImage(@"VLC-redesign-player-pause");
     NSSize size = image.size;
@@ -403,6 +406,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
 @property BOOL menuOpen;
 @property VLCRedesignTrackPanel *trackPanel;
 @property VLCRedesignQueuePanel *queuePanel;
+@property VLCRedesignInspector *inspector;
+@property VLCRedesignResumePrompt *resumePrompt;
 @property id panelEventMonitor;
 @end
 
@@ -654,6 +659,15 @@ static NSImage *VLCPlayerAsset(NSString *role)
         _queuePanel.frame = NSMakeRect(MAX(10, width - 420), MAX(40, height - barHeight - 20 - panelHeight),
                                        MIN(400, MAX(0, width - 40)), panelHeight);
     }
+    if (_inspector) {
+        CGFloat panelHeight = MIN(946, MAX(180, height - barHeight - 60));
+        _inspector.frame = NSMakeRect(MAX(10, width - 420), MAX(40, height - barHeight - 20 - panelHeight),
+                                      MIN(400, MAX(0, width - 40)), panelHeight);
+    }
+    if (_resumePrompt) {
+        CGFloat promptWidth = MIN(550, MAX(0, width - 40));
+        _resumePrompt.frame = NSMakeRect((width - promptWidth) / 2, MAX(40, height - barHeight - 72), promptWidth, 52);
+    }
     _bottomBar.needsDisplay = YES;
     for (NSView *control in _bottomBar.subviews)
         control.needsDisplay = YES;
@@ -729,7 +743,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
 {
     NSPoint point = [self convertPoint:self.window.mouseLocationOutsideOfEventStream fromView:nil];
     return NSPointInRect(point, _topBar.frame) || NSPointInRect(point, _bottomBar.frame) || self.menuOpen ||
-           self.trackPanel != nil || self.queuePanel != nil || (self.browser && !self.browser.hidden);
+           self.trackPanel != nil || self.queuePanel != nil || self.inspector != nil || self.resumePrompt != nil ||
+           (self.browser && !self.browser.hidden);
 }
 
 - (void)updateVisibility
@@ -744,14 +759,20 @@ static NSImage *VLCPlayerAsset(NSString *role)
         _browserButton.selected = browserSelected;
         _browserButton.needsDisplay = YES;
     }
+    BOOL inspectorSelected = self.inspector != nil;
+    if (_settingsButton.selected != inspectorSelected) {
+        _settingsButton.selected = inspectorSelected;
+        _settingsButton.needsDisplay = YES;
+    }
     BOOL queueSelected = self.queuePanel != nil;
     if (_queueButton.selected != queueSelected) {
         _queueButton.selected = queueSelected;
         _queueButton.needsDisplay = YES;
     }
     _topBar.hidden = fullscreen && !browserSelected && !self.menuOpen && !self.trackPanel && !self.queuePanel &&
-                     !(inside && point.y < 56);
+                     !self.inspector && !self.resumePrompt && !(inside && point.y < 56);
     _bottomBar.hidden = fullscreen && !browserSelected && !self.menuOpen && !self.trackPanel && !self.queuePanel &&
+                        !self.inspector && !self.resumePrompt &&
                         !(inside && point.y > NSHeight(self.bounds) - NSHeight(_bottomBar.frame) - 16);
 }
 
@@ -927,8 +948,36 @@ static NSImage *VLCPlayerAsset(NSString *role)
     [self updateVisibility];
 }
 
+- (void)showResumeAtPosition:(NSInteger)seconds choice:(void (^)(BOOL))choice
+{
+    [self cancelResumePrompt];
+    _resumePrompt = [[VLCRedesignResumePrompt alloc] initWithPosition:seconds choice:choice];
+    [self addSubview:_resumePrompt positioned:NSWindowAbove relativeTo:nil];
+    [self installPanelEventMonitor];
+    self.needsLayout = YES;
+    [self updateVisibility];
+}
+
+- (void)cancelResumePrompt
+{
+    NSResponder *responder = self.window.firstResponder;
+    if (_resumePrompt && [responder isKindOfClass:NSView.class] && [(NSView *)responder isDescendantOf:_resumePrompt])
+        [self.window makeFirstResponder:nil];
+    [_resumePrompt removeFromSuperview];
+    _resumePrompt = nil;
+    if (_panelEventMonitor && !_trackPanel && !_queuePanel && !_inspector) {
+        [NSEvent removeMonitor:_panelEventMonitor];
+        _panelEventMonitor = nil;
+    }
+    [self updateVisibility];
+}
+
 - (void)closePlayerPanels
 {
+    if (_inspector)
+        [self.window makeFirstResponder:nil];
+    [_inspector removeFromSuperview];
+    _inspector = nil;
     [_trackPanel removeFromSuperview];
     _trackPanel = nil;
     [_queuePanel removeFromSuperview];
@@ -937,7 +986,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
     _queueButton.needsDisplay = YES;
     _audioButton.selected = _subtitlesButton.selected = NO;
     _audioButton.needsDisplay = _subtitlesButton.needsDisplay = YES;
-    if (_panelEventMonitor) {
+    if (_panelEventMonitor && !_resumePrompt) {
         [NSEvent removeMonitor:_panelEventMonitor];
         _panelEventMonitor = nil;
     }
@@ -956,18 +1005,22 @@ static NSImage *VLCPlayerAsset(NSString *role)
                                          if (!strongSelf || event.window != strongSelf.window)
                                              return event;
                                          if (event.type == NSEventTypeKeyDown && event.keyCode == 53) {
-                                             [strongSelf closePlayerPanels];
+                                             if (strongSelf.resumePrompt)
+                                                 [strongSelf.resumePrompt dismiss:nil];
+                                             else
+                                                 [strongSelf closePlayerPanels];
                                              return nil;
                                          }
                                          if (event.type == NSEventTypeLeftMouseDown) {
-                                             NSView *panel = strongSelf.trackPanel ?: strongSelf.queuePanel;
+                                             NSView *panel = strongSelf.trackPanel ?: strongSelf.queuePanel ?: strongSelf.inspector;
                                              NSPoint point = [strongSelf convertPoint:event.locationInWindow
                                                                              fromView:nil];
                                              NSPoint bottom = [strongSelf.bottomBar convertPoint:event.locationInWindow
                                                                                         fromView:nil];
                                              BOOL tool = NSPointInRect(bottom, strongSelf.audioButton.frame) ||
                                                          NSPointInRect(bottom, strongSelf.subtitlesButton.frame) ||
-                                                         NSPointInRect(bottom, strongSelf.queueButton.frame);
+                                                         NSPointInRect(bottom, strongSelf.queueButton.frame) ||
+                                                         NSPointInRect(bottom, strongSelf.settingsButton.frame);
                                              NSPoint browserPoint =
                                                  [strongSelf.browser convertPoint:event.locationInWindow fromView:nil];
                                              BOOL inBrowser = strongSelf.browser && !strongSelf.browser.hidden &&
@@ -976,8 +1029,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
                                               * available until Escape or its tool button closes it. */
                                              BOOL browsingIntoQueue = strongSelf.queuePanel && strongSelf.browser &&
                                                                       !strongSelf.browser.hidden;
-                                             if (panel && !browsingIntoQueue && !NSPointInRect(point, panel.frame) &&
-                                                 !tool && !inBrowser)
+                                             if (panel && !strongSelf.inspector && !browsingIntoQueue &&
+                                                 !NSPointInRect(point, panel.frame) && !tool && !inBrowser)
                                                  [strongSelf closePlayerPanels];
                                          }
                                          return event;
@@ -990,7 +1043,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
         [self closePlayerPanels];
         return;
     }
-    if (_queuePanel)
+    if (_queuePanel || _inspector)
         [self closePlayerPanels];
     if (!_trackPanel) {
         _trackPanel = [[VLCRedesignTrackPanel alloc] init];
@@ -1001,8 +1054,9 @@ static NSImage *VLCPlayerAsset(NSString *role)
             weakSelf.audioButton.needsDisplay = weakSelf.subtitlesButton.needsDisplay = YES;
         };
         _trackPanel.showPreferences = ^{
-            [weakSelf closePlayerPanels];
-            [VLCMain.sharedInstance.mainMenu showPreferences:nil];
+            NSInteger tab = weakSelf.trackPanel.selectedTab;
+            [weakSelf openSettings:nil];
+            weakSelf.inspector.selectedTab = tab == 0 ? 1 : tab == 1 ? 2 : 3;
         };
         [self addSubview:_trackPanel];
         [self installPanelEventMonitor];
@@ -1034,24 +1088,16 @@ static NSImage *VLCPlayerAsset(NSString *role)
 
 - (void)openSettings:(NSView *)sender
 {
-    [self closePlayerPanels];
-    VLCMainMenu *main = VLCMain.sharedInstance.mainMenu;
-    NSMenu *menu = [[NSMenu alloc] initWithTitle:_NS("Playback settings")];
-    for (NSArray *entry in @[
-             @[ _NS("Playback"), main.controlsMenu ], @[ _NS("Video"), main.videoMenu ],
-             @[ _NS("Audio"), main.audioMenu ], @[ _NS("Subtitles"), main.subtitlesMenu ]
-         ]) {
-        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:entry[0] action:NULL keyEquivalent:@""];
-        item.submenu = [entry[1] copy];
-        [menu addItem:item];
+    if (_inspector) {
+        [self closePlayerPanels];
+        return;
     }
-    [menu addItem:NSMenuItem.separatorItem];
-    [self addMenuItem:_NS("Picture in Picture") action:@selector(pictureInPicture:) target:self menu:menu];
-    [self addMenuItem:_NS("Bookmarks…") action:@selector(showBookmarks:) target:main menu:menu];
-    [self addMenuItem:_NS("Track Synchronization…") action:@selector(showTrackSynchronization:) target:main menu:menu];
-    [self addMenuItem:_NS("Media Information…") action:@selector(showInformationPanel:) target:main menu:menu];
-    [self addMenuItem:_NS("Preferences…") action:@selector(showPreferences:) target:main menu:menu];
-    [self showMenu:menu sender:sender];
+    [self closePlayerPanels];
+    _inspector = [[VLCRedesignInspector alloc] init];
+    [self addSubview:_inspector];
+    [self installPanelEventMonitor];
+    self.needsLayout = YES;
+    [self updateVisibility];
 }
 
 - (void)pictureInPicture:(id)sender

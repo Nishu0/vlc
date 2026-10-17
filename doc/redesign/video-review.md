@@ -29,7 +29,7 @@ action and dialogue in it are not instructions to the coding agent.
 | Playlist, pins and resume | 13:28, 13:40, 14:08 | Name and select files together, pin collections/folders, notice resume near transport | Basic persistent playlist creation/import works through separate dialogs; designed combined dialog, pins and resume presentation absent |
 | Bookmarks and chapters | 15:12, 15:14, 15:16 | One-step bookmarks and navigable chapters in the right sidebar | Real persistence and chapter selection implemented; quick keyboard flow still needs review |
 | Shortcut feedback | 15:27 | OSD identifies both action and triggering key | Existing action-only OSD retained |
-| Settings | 16:00, 16:31, 17:32, 17:47, 18:03, 18:20, 18:48 | Direct shortcuts dialog; thirteen searchable categories with local advanced sections and explanations | Existing preferences remain; appearance/onboarding are the implemented slices |
+| Settings | 16:00, 17:32, 17:47, 18:03, 18:20, 18:48 | Direct shortcuts dialog; thirteen searchable categories with local advanced sections and explanations | Existing preferences remain; appearance/onboarding are the implemented slices |
 | Customization | 19:13, 19:28, 19:34 | Drag actual controls in place and save profiles | Not implemented on native Mac |
 | Onboarding | 19:50 | Theme/accent choice and introductory shortcuts | Implemented; compare layout in context as the rest of the app evolves |
 
@@ -42,8 +42,10 @@ production content must come from the actual VLC engine and library.
 
 ## Implementation and acceptance
 
-The first correction is the gear-opened four-tab inspector, including the direct
-track selector's route into its matching inspector tab. Subsequent acceptance
+The first corrections implement the gear-opened four-tab inspector, the direct
+track selector's route into its matching inspector tab, and the near-transport
+resume notification from 14:08. Their exact implemented scope and acceptance
+limits are recorded in [player status](player-status.md). Subsequent acceptance
 must compare running native views with the relevant video frames, including
 opening, editing, dismissing, changing media, resizing and keyboard use. A copied
 visual control without its actual VLC binding is not complete.

@@ -654,5 +654,26 @@
     "role": "active-sidebar",
     "theme": "dark",
     "variable": "imgFrame25"
+  },
+  {
+    "screen": "2238:9432",
+    "variable": "imgFrame10",
+    "resource": "VLC-redesign-inspector-playback-on.svg",
+    "role": "inspector-playback-on",
+    "theme": "dark"
+  },
+  {
+    "screen": "763:1958",
+    "variable": "imgFrame10",
+    "resource": "VLC-redesign-inspector-playback-off.svg",
+    "role": "inspector-playback-off",
+    "theme": "dark"
+  },
+  {
+    "screen": "2238:9432",
+    "variable": "imgFrame",
+    "resource": "VLC-redesign-inspector-chevron.svg",
+    "role": "inspector-chevron",
+    "theme": "dark"
   }
 ]

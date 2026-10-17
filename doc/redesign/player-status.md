@@ -1,6 +1,6 @@
 # Native Mac player redesign
 
-The main player is being implemented around VLC's existing native video output and player/queue controllers. The chrome, direct track/device selectors, Queue / Bookmarks / Chapters panel, and compact browser are implemented. The four-tab settings inspector and hover thumbnails remain separate parts of the main-player request.
+The main player is being implemented around VLC's existing native video output and player/queue controllers. The chrome, direct track/device selectors, Queue / Bookmarks / Chapters panel, compact browser, and the first four-tab inspector slice are implemented. A video-led resume notification is also implemented with native component checks; its running-app acceptance is pending an unlocked desktop. Hover thumbnails and the deeper inspector workflows remain parts of the main-player request.
 
 ## Shell and transport
 
@@ -12,7 +12,7 @@ At widths below 920 points, seeking occupies a separate row. Below 560 points, a
 
 Actions call the real VLC controllers: play/pause, previous/next queue item, fast drag seeking and precise release/keyboard seeking, volume (0–200%), mute, duration/remaining toggle, jump-to-time dialog, audio/subtitle selectors, and queue visibility. Adjusting volume while muted unmutes at the requested level. The cone uses the exported SVG background/gradient, clipped by the current volume. Double-clicking it restores 100%.
 
-The top controls provide the existing File actions, compact browser access, containing-folder navigation in the full library, minimize, zoom, fullscreen, and close. Playback tools retain access to video/audio/subtitle/playback commands, PiP, bookmarks, synchronization, media information, and preferences. These menus currently expose existing native dialogs; their replacement by the designed inspector is still pending.
+The top controls provide the existing File actions, compact browser access, containing-folder navigation in the full library, minimize, zoom, fullscreen, and close. Playback tools retain access to video/audio/subtitle/playback commands, PiP, bookmarks, synchronization, media information, and preferences. The gear now opens the in-player inspector. Expanded filter editing, information and global preferences still use their existing native dialogs where their redesigned replacements are unfinished.
 
 The legacy classic-layout preference retains the original interface. The standard player keeps the original controller/XIB integration behind the new chrome so VLC's output ownership, PiP transfer, audio fallback, and existing advanced actions continue to function.
 
@@ -22,7 +22,7 @@ The native floating panel follows contexts `496:2495` (audio), `498:2674` (video
 
 Video, Audio, and Subtitles tabs enumerate the active input's real tracks. None unselects the category, and each track selects exclusively through `VLCPlayerController`. Radio accessibility values expose selection. The controller's track metadata now holds/releases its stream ID so retained rows cannot outlive that ID when inputs change. Track list/selection/media/state notifications refresh the rows and preserve keyboard focus.
 
-Audio outputs use the exact IDs returned by `aout_DevicesList`, including nonnumeric IDs; refresh re-enumerates available outputs. Embedded and external subtitles are separated by matching VLC's associated-source identifiers to its input-associated URL list. The plus button opens VLC's existing subtitle picker. The pencil opens the selected local text subtitle in TextEdit; it is disabled for an unsupported or unselected external file. This does not implement the video's later bulk subtitle assignment or timeline editor. Show Preferences opens the existing preferences window. Escape and clicks outside the panel dismiss it; fullscreen keeps controls available while the panel is open.
+Audio outputs use the exact IDs returned by `aout_DevicesList`, including nonnumeric IDs; refresh re-enumerates available outputs. Embedded and external subtitles are separated by matching VLC's associated-source identifiers to its input-associated URL list. The plus button opens VLC's existing subtitle picker. The pencil opens the selected local text subtitle in TextEdit; it is disabled for an unsupported or unselected external file. This does not implement the video's later bulk subtitle assignment or timeline editor. Show Preferences opens the inspector on the matching Video, Audio or Subtitles tab. Escape and clicks outside the panel dismiss it; fullscreen keeps controls available while the panel is open.
 
 ## Queue, bookmarks, and chapters
 
@@ -45,6 +45,72 @@ Videos uses monitored folders. Music uses actual Songs, Albums, Artists, and Gen
 There are now 93 original SVG player resources. Native reflection transforms preserve export wrapper orientation. A targeted Figma check found that the inactive Music instance's screenshot and exported code/SVG disagree (the export depicts a gear); the browser uses the original cached Music asset from the full library instead. It is not a claim that every icon variant or the full-library screens are finished.
 
 Checks so far: live search narrowed six filesystem entries to the requested file; grid navigation opened two nested folders; Back/Forward restored each location; a generated second episode appeared automatically through the directory watcher. Grid/list switching and the parent menu now pass after fixing collection registration order, retaining the weak caption outlet through subview ownership, and bounding parent traversal. A probe loads the actual built browser grid item and renders three native collection items. The shared renderer still passes 42 native cases; file/URL/plain-text/empty pasteboard parsing passes independently. The file context action appended a generated 12-second clip, changing the queue from 6:00 to 6:12 while the current 3-minute input remained unchanged. Music opened its real (empty test-library) Songs list, and a playlist created in the native browser dialog appeared in persistent storage. Pointer drags begin native tracking in both browser and queue, but the current automation leaves tracking unfinished until Escape; cross-panel insertion remains unverified. A separate QA playlist was created and populated through the native file picker; its imported clip appeared without changing playback or the queue. Browser layouts were visually reviewed after resizing to 802 and 604 points wide. Full-library expansion opened the same fixture folder, retaining playback at 1:30. Network-source content navigation still needs its own acceptance check. The paired browser/queue remains open until its tool or Escape closes the queue; other floating selectors retain outside-click dismissal.
+
+## Video-led inspector and resume notification
+
+The [timestamped video review](video-review.md) records the visual and interaction
+references. The gear now opens a persistent right-hand inspector with Playback,
+Video, Audio and Subtitles tabs, matching the workflow demonstrated at
+07:08–09:18. It remains open while the video plays and during numeric edits;
+Escape or the gear closes it. Its body scrolls in short windows, and the shared
+native renderer aligns the tab labels, fields, switches and buttons.
+
+Implemented bindings:
+
+- Playback speed from 0.25× to 2×, reset, capability-aware reverse, a cancellable
+  sleep timer, and the existing metadata route. The timer belongs to playback,
+  survives closing the inspector, and stops playback when its wall-clock
+  deadline expires; wake checks handle an overdue deadline.
+- Aspect ratio, crop, zoom, quarter-turn rotation and flips, plus live brightness,
+  contrast, saturation, hue and gamma. Reset restores picture values. Expanded
+  video filters still open the existing native effects editor.
+- Audio delay, preferred language for future media, the 18 built-in EQ presets,
+  compressor, spatializer and stereo widener. Expanded parameters still use
+  the existing audio effects editor.
+- Subtitle delay, external subtitle FPS including Auto, duration factor,
+  relative text size, vertical position, outline thickness, background opacity,
+  color choices and a preferred language for future media. Current track
+  selection remains in the direct track selector.
+
+Numeric fields and sliders share bounded values. Invalid/non-finite text does
+not apply. Reset and tab actions finish editing first so an old field editor
+cannot overwrite a reset. Thirteen native regression checks cover these fields
+and timer expiry/cancellation/replacement/ownership.
+
+Running-app checks confirmed 1.5× speed and reset, audio delay and actual EQ /
+compressor module activation, subtitle delay and reset, all 19 MKV subtitle
+rows, and the direct-selector footer opening the matching inspector tab.
+Choosing Hindi as the future subtitle preference selected the actual Hindi
+stream after switching away and reopening the MKV. Automatic language selection
+was restored afterward. The size control reported the requested 150%; a paused
+long seek then exhausted the input while requesting further decoded frames, so
+visible-caption size acceptance remains unresolved rather than counted passed.
+
+Rotation testing exposed two backend gaps: display negotiation attempted a
+converter for orientation changes even when the display could accept them, and
+the metadata-only transform lost its hardware context. Those paths now retain
+the context, negotiate with the display, and restore the original format when
+removing the filter. The Apple display uses its negotiated orientation. Four
+video-output scenarios pass, including the original chroma case, accepting and
+rejecting displays, restoration, and the real transform's context retention.
+The new orientation and context regressions failed before their fixes. The
+supplied hardware-decoded MKV visibly rotated to portrait and returned to
+landscape with the filters intact.
+
+The resume notification follows 14:08: a small centered message immediately
+above the transport, with Continue Watching and Dismiss, rather than a separate
+window. The classic player retains its old dialog. Resume times now convert
+VLC ticks to seconds correctly, duration eligibility uses matching units, and
+command-line resume policy is honored. Completion or cancellation clears the
+old timer/callback before another media item can reuse it. Eight component
+checks cover time formatting, three widths, actions and one-shot completion.
+Running-app resume, Escape, timeout and resize acceptance are pending because
+the computer-use tool reported a locked Mac during this part of testing.
+
+The full inspector is not complete. Cue timeline, waveform, scoped presets,
+font-family/exact-pixel controls, richer color editing, complete inline filter
+parameters and hardware/output choices remain explicitly pending. No working
+feature is inferred merely from a placeholder in a Figma or video frame.
 
 ## Verification record
 
@@ -88,7 +154,8 @@ maintainer review.
 ## Remaining main-player parts
 
 - Remaining external file/library drop acceptance checks.
-- Four-tab settings inspector and its parameter bindings, including video and playback settings.
+- Remaining inspector workflows: cue timeline/waveform, scoped presets, exact font controls, richer color editing, full inline filter parameters and output capabilities.
+- Running-app acceptance of the new resume prompt, plus the unresolved paused-long-seek/caption-size check.
 - Hover thumbnails generated for the hovered time, independent of the playing input.
 - Remaining fullscreen edge-hover, keyboard focus, PiP return, and small-window checks.
 - Full player acceptance against the video interaction map, including unsupported/live input states.

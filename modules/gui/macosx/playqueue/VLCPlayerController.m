@@ -1542,6 +1542,30 @@ static int BossCallback(vlc_object_t *p_this,
     vlc_player_Unlock(_p_player);
 }
 
+- (NSString *)preferredLanguageForCategory:(enum es_format_category_e)category
+{
+    if (category != AUDIO_ES && category != SPU_ES)
+        return @"";
+    vlc_player_Lock(_p_player);
+    char *language = vlc_player_GetCategoryLanguage(_p_player, category);
+    vlc_player_Unlock(_p_player);
+    if (language == NULL)
+        language = config_GetPsz(category == AUDIO_ES ? "audio-language" : "sub-language");
+    NSString *result = language ? [NSString stringWithUTF8String:language] : @"";
+    free(language);
+    return result ?: @"";
+}
+
+- (void)setPreferredLanguage:(NSString *)language forCategory:(enum es_format_category_e)category
+{
+    if (category != AUDIO_ES && category != SPU_ES)
+        return;
+    vlc_player_Lock(_p_player);
+    vlc_player_SelectCategoryLanguage(_p_player, category, language.length ? language.UTF8String : NULL);
+    vlc_player_Unlock(_p_player);
+    config_PutPsz(category == AUDIO_ES ? "audio-language" : "sub-language", language.UTF8String);
+}
+
 - (unsigned int)subtitleTextScalingFactor
 {
     unsigned int ret = 100;

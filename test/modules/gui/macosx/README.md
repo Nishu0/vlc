@@ -20,3 +20,15 @@ clang -fobjc-arc -Wall -Wextra -framework Cocoa \
 
 The executable and app must have matching architectures. This standalone check
 is not currently integrated into the cross-platform test runner.
+
+`inspector.m` checks numeric text entry, range validation, keyboard-editable and
+centered fields, disabled controls, timer expiration/cancellation/replacement,
+wake checks and timer ownership. It loads the actual inspector classes but uses
+an injected expiration handler, so it does not start or stop VLC playback.
+Compile it with the same command, replacing `file-drop.m` with `inspector.m` and
+choosing a distinct executable name.
+
+`resume-prompt.m` checks timestamp display, non-overlapping controls at three
+widths, Continue/Dismiss dispatch and one-shot completion. It does not resume
+actual media; that is covered by running-app acceptance of the controller path.
+Compile it in the same way, using its source and a distinct executable name.

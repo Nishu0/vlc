@@ -106,6 +106,10 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignTextLayout.m \
 	gui/macosx/redesign/VLCRedesignPlayerChrome.h \
 	gui/macosx/redesign/VLCRedesignPlayerChrome.m \
+	gui/macosx/redesign/VLCRedesignResumePrompt.h \
+	gui/macosx/redesign/VLCRedesignResumePrompt.m \
+	gui/macosx/redesign/VLCRedesignInspector.h \
+	gui/macosx/redesign/VLCRedesignInspector.m \
 	gui/macosx/redesign/VLCRedesignTrackPanel.h \
 	gui/macosx/redesign/VLCRedesignTrackPanel.m \
 	gui/macosx/redesign/VLCRedesignPanelButton.h \
@@ -664,6 +668,9 @@ BUILT_SOURCES += $(libmacosx_plugin_la_XIB_SOURCES:.xib=.nib)
 endif
 
 libmacosx_plugin_la_RES = \
+	gui/macosx/Resources/redesign/VLC-redesign-inspector-chevron.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-inspector-playback-off.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-inspector-playback-on.svg \
 	gui/macosx/Resources/redesign/Inter-Light.ttf \
 	gui/macosx/Resources/redesign/Inter-Regular.ttf \
 	gui/macosx/Resources/redesign/Inter-Medium.ttf \

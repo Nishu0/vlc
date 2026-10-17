@@ -32,6 +32,7 @@
 #import "library/VLCLibraryDataTypes.h"
 
 #import <vlc_configuration.h>
+#include <math.h>
 
 static const int64_t SecInMillisecs = 1000;
 static const int64_t MinInMillisecs = SecInMillisecs * 60;
@@ -148,7 +149,7 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
 
 - (void)continuePlaybackWhereYouLeftOff:(VLCInputItem *)inputItem player:(VLCPlayerController *)playerController
 {
-    int settingValue = (int)config_GetInt("macosx-continue-playback");
+    int settingValue = (int)var_InheritInteger(getIntf(), "macosx-continue-playback");
     if (settingValue == 2) // never resume
         return;
 
@@ -198,15 +199,17 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
     NSParameterAssert(libraryMediaItem != nil);
 
     const float lastPlaybackPosition = libraryMediaItem.progress;
-    const int64_t duration = playerController.durationOfCurrentMediaItem;
+    const vlc_tick_t duration = playerController.durationOfCurrentMediaItem;
     const BOOL isAlbumTrack = libraryMediaItem.mediaSubType == VLC_ML_MEDIA_SUBTYPE_ALBUMTRACK;
 
-    if (lastPlaybackPosition < MinimumStorePercent || duration < MinimumDuration || isAlbumTrack) {
+    if (!isfinite(lastPlaybackPosition) || lastPlaybackPosition < MinimumStorePercent ||
+        lastPlaybackPosition >= 1 || duration < VLC_TICK_FROM_MS(MinimumDuration) || isAlbumTrack) {
         return;
     }
 
+    NSString * const expectedMRL = playerController.currentMedia.MRL;
     CompletionBlock completionBlock = ^(enum ResumeResult result) {
-        if (result == RESUME_RESTART)
+        if (result != RESUME_NOW || ![playerController.currentMedia.MRL isEqualToString:expectedMRL])
             return;
 
         msg_Dbg(getIntf(), "continuing playback at %0.2f", lastPlaybackPosition);
@@ -223,7 +226,7 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
     }
 
     [_resumeDialogController showWindowWithItem:libraryMediaItem.inputItem
-                               withLastPosition:(lastPlaybackPosition * duration) / 1000
+                               withLastPosition:SEC_FROM_VLC_TICK((vlc_tick_t)(lastPlaybackPosition * duration))
                                 completionBlock:completionBlock];
 }
 
@@ -239,8 +242,9 @@ static NSString *VLCRecentlyPlayedMediaListKey = @"recentlyPlayedMediaList";
     if (!lastPosition || lastPosition.intValue <= 0)
         return;
 
+    NSString * const expectedMRL = playerController.currentMedia.MRL;
     CompletionBlock completionBlock = ^(enum ResumeResult result) {
-        if (result == RESUME_RESTART)
+        if (result != RESUME_NOW || ![playerController.currentMedia.MRL isEqualToString:expectedMRL])
             return;
 
         vlc_tick_t lastPos = vlc_tick_from_sec( lastPosition.intValue );

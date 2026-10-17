@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithVideoController:(VLCMainVideoViewController *)controller;
 - (void)mountVideoView:(NSView *)videoView;
 - (void)updatePlayer;
+- (void)showResumeAtPosition:(NSInteger)seconds choice:(void (^)(BOOL continuePlayback))choice;
+- (void)cancelResumePrompt;
 - (void)updateVisibility;
 @property (readonly) BOOL mouseOnControls;
 @end
