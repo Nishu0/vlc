@@ -42,7 +42,19 @@ Folder contents load off the main thread and discard stale results. History has 
 
 Videos uses monitored folders. Music uses actual Songs, Albums, Artists, and Genres; playlists and recents come from the library model. Play and Add to queue call VLC's existing controllers. Add Folder, Create/Rename Playlist, importing media into a playlist, file/library drops, and the native network-source/stream-opening paths use existing storage and dialogs. Folder and music-group navigation keep selection consistent as asynchronous results arrive. Network-source contents and full-library views retain their existing native UI pending those later redesign stages.
 
-There are now 93 original SVG player resources. Native reflection transforms preserve export wrapper orientation. A targeted Figma check found that the inactive Music instance's screenshot and exported code/SVG disagree (the export depicts a gear); the browser uses the original cached Music asset from the full library instead. It is not a claim that every icon variant or the full-library screens are finished.
+There are now 96 original SVG player resources. A targeted Figma check found that the inactive Music instance's screenshot and exported code/SVG disagree (the export depicts a gear); the browser uses the original cached Music asset from the full library instead. It is not a claim that every icon variant or the full-library screens are finished.
+
+The video icon review found missing horizontal reflections in the title-bar
+folder/sidebar, speaker, browser expand/music and selected video/music assets.
+The shared image loader now restores the enclosing export transforms, including
+the video-track, refresh and queue-arrow assets. It retains the original SVGs
+and intrinsic sizes. Browser controls no longer apply separate reflections,
+which previously missed selected states. The rebuilt development app was
+visually checked with generated media: folders have their tabs on the left,
+the sidebar marker stays on the left, speaker waves face right, Expand points
+up/right, and video/music icons retain their orientation when selected.
+This check does not establish full-library icon parity; those views still use
+the existing native interface.
 
 Checks so far: live search narrowed six filesystem entries to the requested file; grid navigation opened two nested folders; Back/Forward restored each location; a generated second episode appeared automatically through the directory watcher. Grid/list switching and the parent menu now pass after fixing collection registration order, retaining the weak caption outlet through subview ownership, and bounding parent traversal. A probe loads the actual built browser grid item and renders three native collection items. The shared renderer still passes 42 native cases; file/URL/plain-text/empty pasteboard parsing passes independently. The file context action appended a generated 12-second clip, changing the queue from 6:00 to 6:12 while the current 3-minute input remained unchanged. Music opened its real (empty test-library) Songs list, and a playlist created in the native browser dialog appeared in persistent storage. Pointer drags begin native tracking in both browser and queue, but the current automation leaves tracking unfinished until Escape; cross-panel insertion remains unverified. A separate QA playlist was created and populated through the native file picker; its imported clip appeared without changing playback or the queue. Browser layouts were visually reviewed after resizing to 802 and 604 points wide. Full-library expansion opened the same fixture folder, retaining playback at 1:30. Network-source content navigation still needs its own acceptance check. The paired browser/queue remains open until its tool or Escape closes the queue; other floating selectors retain outside-click dismissal.
 

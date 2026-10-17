@@ -10,10 +10,28 @@
 NSImage *VLCRedesignPanelImage(NSString *name)
 {
     static NSCache<NSString *, NSImage *> *cache;
+    static NSSet<NSString *> *reflectedAssets;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
         cache = [[NSCache alloc] init];
         cache.countLimit = 256;
+        /* These exports omit the enclosing horizontal reflection. Keep the
+         * original SVGs, but restore their displayed orientation once here so
+         * every caller, theme and selected state uses the same geometry. */
+        reflectedAssets = [NSSet setWithArray:@[
+            @"VLC-redesign-player-dark-sidebar", @"VLC-redesign-player-light-sidebar",
+            @"VLC-redesign-player-active-sidebar", @"VLC-redesign-player-dark-folder",
+            @"VLC-redesign-player-light-folder", @"VLC-redesign-player-dark-speaker",
+            @"VLC-redesign-player-light-speaker", @"VLC-redesign-tracks-video-off",
+            @"VLC-redesign-tracks-video-on", @"VLC-redesign-tracks-refresh",
+            @"VLC-redesign-queue-repeat", @"VLC-redesign-queue-shuffle",
+            @"VLC-redesign-browser-videos", @"VLC-redesign-browser-videos-active",
+            @"VLC-redesign-browser-music", @"VLC-redesign-browser-music-active",
+            @"VLC-redesign-browser-recent", @"VLC-redesign-browser-folder",
+            @"VLC-redesign-browser-back", @"VLC-redesign-browser-forward",
+            @"VLC-redesign-browser-expand", @"VLC-redesign-browser-songs",
+            @"VLC-redesign-browser-albums"
+        ]];
     });
     NSImage *image = [cache objectForKey:name];
     if (!image) {
@@ -21,6 +39,24 @@ NSImage *VLCRedesignPanelImage(NSString *name)
         if (!path)
             return nil;
         image = [[NSImage alloc] initWithContentsOfFile:path];
+        if (image && [reflectedAssets containsObject:name]) {
+            NSImage *source = image;
+            image = [NSImage imageWithSize:source.size flipped:NO drawingHandler:^BOOL(NSRect rect) {
+                [NSGraphicsContext saveGraphicsState];
+                NSAffineTransform *reflection = [NSAffineTransform transform];
+                [reflection translateXBy:NSMinX(rect) + NSMaxX(rect) yBy:0];
+                [reflection scaleXBy:-1 yBy:1];
+                [reflection concat];
+                [source drawInRect:rect
+                          fromRect:NSZeroRect
+                         operation:NSCompositingOperationSourceOver
+                          fraction:1
+                    respectFlipped:YES
+                             hints:nil];
+                [NSGraphicsContext restoreGraphicsState];
+                return YES;
+            }];
+        }
         if (image)
             [cache setObject:image forKey:name];
     }

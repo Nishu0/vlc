@@ -56,25 +56,6 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
         }
 }
 
-@interface VLCBrowserIconButton : VLCRedesignPanelButton
-@property BOOL mirrorIcon;
-@end
-@implementation VLCBrowserIconButton
-
-- (void)drawRect:(NSRect)dirtyRect
-{
-    [NSGraphicsContext saveGraphicsState];
-    if (self.mirrorIcon) {
-        NSAffineTransform *transform = [NSAffineTransform transform];
-        [transform translateXBy:NSWidth(self.bounds) yBy:0];
-        [transform scaleXBy:-1 yBy:1];
-        [transform concat];
-    }
-    [super drawRect:dirtyRect];
-    [NSGraphicsContext restoreGraphicsState];
-}
-
-@end
 @interface VLCBrowserModeButton : VLCRedesignPanelButton
 @property BOOL gridIcon;
 @end
@@ -140,7 +121,6 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 /* SVGs keep their intrinsic size; media thumbnails alone fill/crop their slot. */
 @interface VLCBrowserArtwork : NSImageView
 @property BOOL intrinsicAsset;
-@property BOOL mirrorIcon;
 @property CGFloat progress;
 @end
 @implementation VLCBrowserArtwork
@@ -165,12 +145,6 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
         NSRect rect =
             NSMakeRect(NSMidX(self.bounds) - size.width * scale / 2, NSMidY(self.bounds) - size.height * scale / 2,
                        size.width * scale, size.height * scale);
-        if (self.mirrorIcon) {
-            NSAffineTransform *transform = [NSAffineTransform transform];
-            [transform translateXBy:NSWidth(self.bounds) yBy:0];
-            [transform scaleXBy:-1 yBy:1];
-            [transform concat];
-        }
         [self.image drawInRect:rect
                       fromRect:NSZeroRect
                      operation:NSCompositingOperationSourceOver
@@ -863,8 +837,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
                           parent:(NSView *)parent
                           action:(void (^)(void))action
 {
-    VLCBrowserIconButton *button = [[VLCBrowserIconButton alloc] init];
-    button.mirrorIcon = [@[ @"home", @"videos", @"network", @"recent", @"back", @"forward" ] containsObject:role];
+    VLCRedesignPanelButton *button = [[VLCRedesignPanelButton alloc] init];
     button.title = @"";
     button.image = VLCBrowserAsset(role);
     button.toolTip = button.accessibilityLabel = label;
@@ -1023,8 +996,6 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         if (i == section && i >= 1 && i <= 4 && mode != VLCBrowserModeDirectory)
             role = [role stringByAppendingString:@"-active"];
         _railButtons[i].image = VLCBrowserAsset(role);
-        ((VLCBrowserIconButton *)_railButtons[i]).mirrorIcon =
-            [@[ @"home", @"videos", @"network", @"recent" ] containsObject:role];
         _railButtons[i].needsDisplay = YES;
     }
     _counter.stringValue = _NS("Loading…");
@@ -1582,7 +1553,6 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         icon = @"folder";
     if (!icon && [entry[@"kind"] isEqualToString:@"playlist"])
         icon = @"playlists";
-    artwork.mirrorIcon = [@[ @"folder", @"songs", @"albums" ] containsObject:icon ?: @""];
     artwork.intrinsicAsset = icon.length > 0;
     artwork.image = icon.length ? VLCBrowserAsset(icon) : nil;
     artwork.progress = [entry[@"progress"] doubleValue];
