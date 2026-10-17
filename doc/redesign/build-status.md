@@ -147,3 +147,23 @@ reported a locked Mac. Resume Continue/Dismiss, Escape, timeout and resize check
 remain pending. A paused-long-seek/caption-size interaction observed in the
 development app also remains unresolved. Component checks and successful
 packaging do not establish those playback paths. Windows remains unbuilt.
+
+## Icon orientation refresh, October 17
+
+Source `2c3391aedf38d7927999cc65b4d24a078de9cc0c` centralizes the missing
+horizontal export reflections, including selected browser icons. The native
+development app was visually checked with generated media; see the icon review
+in [player status](player-status.md). The full build/package completed through
+`resume-build.sh redesign-icon-orientation`. The staged app is
+`build-macos-baseline/artifacts/macos-player-preview-2c3391aedf/VLC.app`; its
+macOS module has the same Mach-O UUID as the visually checked development app.
+
+The refreshed `build-macos-baseline/artifacts/VLC-video-review-preview-arm64.dmg`
+passes `hdiutil verify`, CRC32 `1059AE79`. Both app copies pass deep strict
+ad-hoc signature verification and contain 390 plugins. Executable SHA-256 is
+`6fac731b5d1df809865156321593832809f96bcec429472e4cc6ba7308b3f193`;
+macOS module SHA-256 is
+`948e20028d60dbb66d894edf0c96af1d371e1e460985ed77f060fb055a470b90`.
+The staged folder includes the source revision and verification metadata.
+The broader resume/caption-size acceptance limits above remain open. This
+refresh is still arm64 only, locally signed and not notarized.
