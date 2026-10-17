@@ -49,4 +49,3 @@ limits are recorded in [player status](player-status.md). Subsequent acceptance
 must compare running native views with the relevant video frames, including
 opening, editing, dismissing, changing media, resizing and keyboard use. A copied
 visual control without its actual VLC binding is not complete.
-

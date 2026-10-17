@@ -108,3 +108,42 @@ folder in the compact browser, and changes from Play to Pause on playback.
 Signing remains local/ad-hoc and is not notarized. Earlier staged apps and the
 unchanged baseline are preserved. The scope and remaining redesign work have
 not changed.
+
+## Video-led inspector review build, October 17
+
+Source `04eb47e1605657d8ca985b2205746e5dcd6d7e59` adds the first four-tab
+inspector and the resume notification identified during the timestamped
+[video review](video-review.md). It includes the preceding rotation/display
+negotiation fixes. The implemented controls and remaining workflows are listed
+in [player status](player-status.md); this remains a partial redesign.
+
+The full arm64 build and packaging completed through
+`resume-build.sh redesign-video-review`. Logs are
+`build-macos-baseline/redesign-video-review-make-final.log` and
+`build-macos-baseline/redesign-video-review-package-final.log`. The staged app is
+`build-macos-baseline/artifacts/macos-player-preview-04eb47e160/VLC.app`.
+Both the build copy and staged app pass deep strict ad-hoc signature verification
+and contain 390 plugins. Signing is local, without Developer ID signing or
+notarization.
+
+The separate review image is
+`build-macos-baseline/artifacts/VLC-video-review-preview-arm64.dmg`.
+It passes `hdiutil verify`, CRC32 `A5E4CF35`. The previous player-preview disk
+image and unchanged baseline are preserved. Executable SHA-256 is
+`1aeeb0b5e36427c6147877a82f2d60faca870eb4d16471942fa580ae30f8ece7`;
+macOS plugin SHA-256 is
+`853afcbc34ad68ac7c01c20badc9ec9ca40d8caf520b70fd01eb4b80298a2e74`.
+The staged folder contains its source revision, scope README and machine-readable
+verification record. No user media, test media or library databases are bundled.
+
+Thirteen inspector checks, eight resume-widget checks and twelve file-drop
+checks pass against the staged module. The 42 native text renders and four
+video-output scenarios also pass. Development-app testing confirmed real
+rotation/restoration, speed/reset, audio delay, EQ/compressor activation,
+subtitle delay/reset and future subtitle-language selection.
+
+The packaged app has not received running-app acceptance: the computer-use tool
+reported a locked Mac. Resume Continue/Dismiss, Escape, timeout and resize checks
+remain pending. A paused-long-seek/caption-size interaction observed in the
+development app also remains unresolved. Component checks and successful
+packaging do not establish those playback paths. Windows remains unbuilt.
