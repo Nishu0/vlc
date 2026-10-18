@@ -60,6 +60,8 @@
 @property VLCRedesignAlignedLabel *message;
 @property VLCResumePromptButton *continueButton;
 @property VLCResumePromptButton *dismissButton;
+@property NSString *positionText;
+@property NSString *fullMessage;
 @property (nonatomic, copy) void (^choice)(BOOL);
 - (void)finishWithChoice:(BOOL)continuePlayback;
 @end
@@ -84,6 +86,8 @@
     NSString *time = [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)(seconds / 3600),
                                                 (long)((seconds / 60) % 60), (long)(seconds % 60)];
     NSString *text = [NSString stringWithFormat:_NS("You already watched till %@"), time];
+    _positionText = time;
+    _fullMessage = text;
     _message = [VLCRedesignAlignedLabel labelWithString:text];
     _message.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular];
     _message.textColor = [VLCRedesignAppearance colorWithRGB:0xBBBBBB];
@@ -144,9 +148,21 @@
 {
     [super layout];
     CGFloat width = NSWidth(self.bounds);
+    BOOL compact = width < 400;
+    CGFloat continueWidth = compact ? (width < 280 ? 88 : 100) : 170;
     _dismissButton.frame = NSMakeRect(MAX(0, width - 42), 10, 32, 32);
-    _continueButton.frame = NSMakeRect(MAX(0, width - 220), 10, 170, 32);
-    _message.frame = NSMakeRect(20, 10, MAX(0, width - 250), 32);
+    _continueButton.frame = NSMakeRect(MAX(0, NSMinX(_dismissButton.frame) - continueWidth - 8), 10,
+                                     continueWidth, 32);
+    _continueButton.title = compact ? _NS("Continue") : _NS("Continue Watching");
+    _message.frame = NSMakeRect(12, 10, MAX(0, NSMinX(_continueButton.frame) - 24), 32);
+    _message.font = [VLCRedesignAppearance fontOfSize:compact ? 12 : 14 weight:NSFontWeightRegular];
+    NSDictionary *attributes = @{ NSFontAttributeName : _message.font };
+    NSString *text = _fullMessage;
+    if ([text sizeWithAttributes:attributes].width > NSWidth(_message.frame))
+        text = [NSString stringWithFormat:_NS("Resume at %@"), _positionText];
+    if ([text sizeWithAttributes:attributes].width > NSWidth(_message.frame))
+        text = _positionText;
+    _message.stringValue = text;
 }
 
 @end

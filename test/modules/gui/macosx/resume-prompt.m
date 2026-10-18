@@ -43,7 +43,7 @@ int main(int argc, char **argv)
         NSButton *resume = [prompt valueForKey:@"continueButton"];
         NSButton *dismiss = [prompt valueForKey:@"dismissButton"];
         BOOL passed = Check([message.stringValue containsString:@"00:10:00"], "Resume time is expressed in seconds");
-        for (NSNumber *width in @[@550, @400, @300]) {
+        for (NSNumber *width in @[@550, @400, @300, @240]) {
             prompt.frame = NSMakeRect(0, 0, width.doubleValue, 52);
             [prompt layoutSubtreeIfNeeded];
             BOOL contained = NSContainsRect(prompt.bounds, resume.frame) &&
@@ -51,6 +51,11 @@ int main(int argc, char **argv)
             BOOL separate = NSMaxX(message.frame) <= NSMinX(resume.frame) &&
                             NSMaxX(resume.frame) <= NSMinX(dismiss.frame);
             passed &= Check(contained && separate, "Responsive prompt controls do not overlap");
+            CGFloat textWidth = [message.stringValue sizeWithAttributes:@{
+                NSFontAttributeName : message.font
+            }].width;
+            passed &= Check([message.stringValue containsString:@"00:10:00"] && textWidth <= NSWidth(message.frame),
+                            "The saved timestamp stays readable in the available message width");
         }
         [resume performClick:nil];
         passed &= Check(calls == 1 && continuePlayback, "Continue invokes the resume action");

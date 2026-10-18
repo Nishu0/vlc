@@ -167,7 +167,7 @@ maintainer review.
 
 - Remaining external file/library drop acceptance checks.
 - Remaining inspector workflows: cue timeline/waveform, scoped presets, exact font controls, richer color editing, full inline filter parameters and output capabilities.
-- Resume-prompt resize and media-change cancellation acceptance. Continue, Dismiss, Escape and timeout passed; paused-long-seek/resume and resumed caption sizing now pass.
+- Resume-prompt resizing at the smallest window sizes after the timestamp-readability correction. Continue, Dismiss, Escape, timeout and media-change cancellation passed; paused-long-seek/resume and resumed caption sizing now pass.
 - Immediate style redraw of an already rendered paused subtitle cue.
 - Remaining fullscreen edge-hover, keyboard focus, PiP return, and small-window checks.
 - Full player acceptance against the video interaction map, including unsupported/live input states.
@@ -256,3 +256,11 @@ dictionary insertion. The library window now creates its controller on first
 access, matching the other lazy interface controllers. The same two-file launch
 now opens video and its resume notification; switching to the second item
 cancels that notification without carrying its old resume action across.
+
+Resizing with the resume prompt visible exposed a truncated saved timestamp in
+the narrow player pane. The prompt now shortens its message and Continue label
+as needed, preserving the full timestamp. Four native width checks (550, 400,
+300 and 240 points) now require the timestamp to fit, alongside non-overlapping
+controls and one-shot actions; the new width assertions failed before the fix.
+All 13 prompt checks pass afterward. The running app was reviewed at its normal
+width; the smallest corrected layouts still have component-level verification.
