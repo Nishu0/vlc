@@ -264,3 +264,12 @@ as needed, preserving the full timestamp. Four native width checks (550, 400,
 controls and one-shot actions; the new width assertions failed before the fix.
 All 13 prompt checks pass afterward. The running app was reviewed at its normal
 width; the smallest corrected layouts still have component-level verification.
+
+The redesigned player now collapses the old library queue on entry and restores
+its previous collapsed/open state on return. The native Play Queue command routes
+to the redesigned Queue / Bookmarks / Chapters panel while in video mode. Native
+checks confirmed both the menu route and restoration of a previously open library
+queue after returning through the live artwork button. Classic mode keeps its
+existing sidebar route. PiP video and native Pause were observed through macOS's
+PIPAgent window; returning exposed a window-sizing defect that remains under
+investigation at this point.

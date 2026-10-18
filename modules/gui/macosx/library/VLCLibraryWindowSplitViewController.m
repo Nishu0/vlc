@@ -38,6 +38,8 @@
 @interface VLCLibraryWindowSplitViewController ()
 
 @property (readwrite) BOOL priorNavSidebarCollapsedState;
+@property BOOL priorMultifunctionSidebarCollapsedState;
+@property BOOL restoreMultifunctionSidebarState;
 
 @end
 
@@ -119,9 +121,18 @@
 
 - (IBAction)toggleMultifunctionSidebar:(id)sender
 {
+    if (self.mainVideoModeEnabled && self.libraryWindow.videoViewController.usesRedesignedPlayer) {
+        [self.libraryWindow.videoViewController togglePlayQueue:sender];
+        return;
+    }
     const BOOL sidebarCollapsed = self.multifunctionSidebarItem.isCollapsed;
     self.multifunctionSidebarItem.animator.collapsed = !sidebarCollapsed;
 
+    [self updateSidebarToggleState];
+}
+
+- (void)updateSidebarToggleState
+{
     const NSControlStateValue controlState =
         self.multifunctionSidebarItem.isCollapsed ? NSControlStateValueOff : NSControlStateValueOn;
     self.libraryWindow.playQueueToggle.state = controlState;
@@ -135,8 +146,19 @@
     } else if (mainVideoModeEnabled) {
         self.priorNavSidebarCollapsedState = self.navSidebarItem.isCollapsed;
         self.navSidebarItem.collapsed = YES;
+        self.restoreMultifunctionSidebarState = self.libraryWindow.videoViewController.usesRedesignedPlayer;
+        if (self.restoreMultifunctionSidebarState) {
+            self.priorMultifunctionSidebarCollapsedState = self.multifunctionSidebarItem.isCollapsed;
+            self.multifunctionSidebarItem.collapsed = YES;
+            [self updateSidebarToggleState];
+        }
     } else {
         self.navSidebarItem.collapsed = self.priorNavSidebarCollapsedState;
+        if (self.restoreMultifunctionSidebarState) {
+            self.multifunctionSidebarItem.collapsed = self.priorMultifunctionSidebarCollapsedState;
+            self.restoreMultifunctionSidebarState = NO;
+            [self updateSidebarToggleState];
+        }
     }
 
     _mainVideoModeEnabled = mainVideoModeEnabled;

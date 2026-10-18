@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)showResumeAtPosition:(NSInteger)seconds choice:(void (^)(BOOL continuePlayback))choice;
 - (void)cancelResumePrompt;
 - (void)updateVisibility;
+- (void)togglePlayQueue:(id)sender;
 @property (readonly) BOOL mouseOnControls;
 @end
 

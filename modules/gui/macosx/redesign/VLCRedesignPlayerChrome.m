@@ -940,6 +940,11 @@ static NSImage *VLCPlayerAsset(NSString *role)
     [self updateVisibility];
 }
 
+- (void)togglePlayQueue:(id)sender
+{
+    [self openQueue:sender];
+}
+
 - (void)openLibrary:(id)sender
 {
     [self.videoController returnToLibrary:sender];

@@ -765,6 +765,10 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (IBAction)togglePlayQueue:(id)sender
 {
+    if (_redesignedPlayer) {
+        [_redesignedPlayer togglePlayQueue:sender];
+        return;
+    }
     VLCLibraryWindow * const libraryWindow = (VLCLibraryWindow*)self.view.window;
     if (libraryWindow != nil) {
         [libraryWindow.splitViewController toggleMultifunctionSidebar:self];
