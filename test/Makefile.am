@@ -119,6 +119,10 @@ if HAVE_DARWIN
 check_PROGRAMS += test_src_misc_image_cvpx
 endif
 
+if HAVE_FREETYPE
+check_PROGRAMS += test_modules_text_renderer_freetype
+endif
+
 if BUILD_LUA
 check_PROGRAMS += test_modules_lua_playlist_parser
 endif
@@ -369,6 +373,12 @@ test_src_misc_image_SOURCES = src/misc/image.c
 test_src_misc_image_LDADD = $(LIBVLCCORE) $(LIBVLC)
 
 test_modules_lua_extension_SOURCES = modules/lua/extension.c
+test_modules_text_renderer_freetype_SOURCES = modules/text_renderer/freetype.c
+test_modules_text_renderer_freetype_LDADD = $(LIBVLCCORE) $(LIBVLC)
+test_modules_text_renderer_freetype_CPPFLAGS = $(AM_CPPFLAGS)
+if HAVE_FONTCONFIG
+test_modules_text_renderer_freetype_CPPFLAGS += -DHAVE_FONTCONFIG
+endif
 test_modules_lua_extension_LDADD = $(LIBVLCCORE) $(LIBVLC)
 test_modules_lua_extension_CPPFLAGS = $(AM_CPPFLAGS)
 

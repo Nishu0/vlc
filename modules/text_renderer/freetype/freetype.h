@@ -105,6 +105,8 @@ typedef struct
 
     /* Current scaling of the text, default is 100 (%) */
     int               i_scale;
+    int               i_font_size; /* 0: relative sizing, otherwise canvas pixels */
+    bool              b_override_styles;
     int               i_font_default_size;
     int               i_outline_thickness;
 

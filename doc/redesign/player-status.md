@@ -287,4 +287,21 @@ reparenting. Native PiP showed the generated video's real 1:30 frame; Play
 advanced its timecode and Pause stopped it. Restore returned the matching frame
 and original 792 × 327-point window. A second round trip using Close retained
 the same window, paused frame and transport. This verifies windowed PiP; native
-fullscreen PiP still has its separate acceptance case.
+fullscreen PiP also passed a native round trip: the paused 1:36 frame and
+fullscreen transport returned with the queue panel preserved.
+
+## Live subtitle typography follow-up
+
+The FreeType renderer now supports exact subtitle-canvas pixel sizes as well as
+the existing relative scale, live font-family changes, and an explicit embedded
+style override. Text, outline and background colors refresh with the renderer.
+Grid captions retain their embedded formatting and sizing. These controls apply
+to text handled by FreeType; bitmap subtitles and text already rendered by
+another subtitle renderer retain that renderer's capabilities.
+
+Eight renderer checks pass, covering relative and exact sizing, switching back
+to relative mode, family changes, embedded colors and grid captions. The exact
+size regression failed against the previous renderer: 24px and 48px produced the
+same height. The corrected renderer produces distinct 21- and 42-pixel glyph
+bounds for those requested font sizes. These are renderer checks; native paused
+caption appearance acceptance is still pending.

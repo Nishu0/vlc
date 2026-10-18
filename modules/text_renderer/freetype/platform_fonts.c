@@ -547,6 +547,9 @@ int ConvertToLiveSize( filter_t *p_filter, const text_style_t *p_style )
 {
     filter_sys_t *p_sys = p_filter->p_sys;
 
+    if( p_sys->i_font_size > 0 )
+        return p_sys->i_font_size;
+
     int i_font_size = STYLE_DEFAULT_FONT_SIZE;
     if( p_style->i_font_size )
     {

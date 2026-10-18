@@ -198,6 +198,15 @@ vlc_module_begin ()
     add_obsolete_integer( "freetype-fontsize" ) /* since 4.0.0 */
     add_obsolete_integer( "freetype-rel-fontsize" ) /* since 4.0.0 */
 
+    add_integer_with_range( "freetype-font-size", 0, 0, 512,
+        N_("Subtitle font size in pixels"),
+        N_("Use an exact font size in the subtitle canvas. Zero uses relative sizing.") )
+        change_safe()
+    add_bool( "freetype-override-styles", false,
+        N_("Override subtitle text styles"),
+        N_("Use the text renderer's font and colors instead of styles embedded in text subtitles.") )
+        change_safe()
+
     add_bool( "freetype-yuvp", false, YUVP_TEXT,
               YUVP_LONGTEXT )
     add_integer_with_range( "freetype-blending-mode", 0, 0, 1, BLENDING_MODE_TEXT,
@@ -712,12 +721,33 @@ static void UpdateDefaultLiveStyles( filter_t *p_filter )
     filter_sys_t *p_sys = p_filter->p_sys;
     text_style_t *p_style = p_sys->p_default_style;
 
+#ifdef HAVE_GET_FONT_BY_FAMILY_NAME
+    char *font = var_InheritString( p_filter, "freetype-font" );
+    if( !font || !*font )
+    {
+        free( font );
+        font = strdup( DEFAULT_FAMILY );
+    }
+    if( font && (!p_style->psz_fontname || strcmp( font, p_style->psz_fontname )) )
+    {
+        free( p_style->psz_fontname );
+        p_style->psz_fontname = font;
+        /* Select the new family even when its size has not changed. */
+        p_sys->p_faceid = NULL;
+    }
+    else
+        free( font );
+#endif
+
     p_style->i_font_color = var_InheritInteger( p_filter, "freetype-color" );
+    p_style->i_font_alpha = var_InheritInteger( p_filter, "freetype-opacity" );
 
     p_style->i_background_alpha = var_InheritInteger( p_filter, "freetype-background-opacity" );
     p_style->i_background_color = var_InheritInteger( p_filter, "freetype-background-color" );
 
     p_sys->i_outline_thickness = var_InheritInteger( p_filter, "freetype-outline-thickness" );
+    p_style->i_outline_color = var_InheritInteger( p_filter, "freetype-outline-color" );
+    p_style->i_outline_alpha = var_InheritInteger( p_filter, "freetype-outline-opacity" );
 }
 
 static void FillDefaultStyles( filter_t *p_filter )
@@ -889,7 +919,7 @@ static size_t AddTextAndStyles( filter_sys_t *p_sys,
     if ( p_mgstyle == NULL )
         return 0;
 
-    if( p_style )
+    if( p_style && !p_sys->b_override_styles )
         /* Replace defaults with segment values */
         text_style_Merge( p_mgstyle, p_style, true );
 
@@ -1038,6 +1068,8 @@ static subpicture_region_t *Render( filter_t *p_filter,
     subpicture_region_t *region = NULL;
     bool b_grid = (p_region_in->text_flags & VLC_SUBPIC_TEXT_FLAG_GRID_MODE) != 0;
     p_sys->i_scale = ( b_grid ) ? 100 : var_InheritInteger( p_filter, "sub-text-scale");
+    p_sys->i_font_size = b_grid ? 0 : var_InheritInteger( p_filter, "freetype-font-size" );
+    p_sys->b_override_styles = !b_grid && var_InheritBool( p_filter, "freetype-override-styles" );
 
     UpdateDefaultLiveStyles( p_filter );
 
