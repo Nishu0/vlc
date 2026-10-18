@@ -112,6 +112,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignSeekPreview.m \
 	gui/macosx/redesign/VLCRedesignInspector.h \
 	gui/macosx/redesign/VLCRedesignInspector.m \
+	gui/macosx/redesign/VLCRedesignSubtitleControls.h \
+	gui/macosx/redesign/VLCRedesignSubtitleControls.m \
 	gui/macosx/redesign/VLCRedesignTrackPanel.h \
 	gui/macosx/redesign/VLCRedesignTrackPanel.m \
 	gui/macosx/redesign/VLCRedesignPanelButton.h \

@@ -575,6 +575,15 @@ modules/gui/macosx/preferences/prefs.h
 modules/gui/macosx/preferences/prefs.m
 modules/gui/macosx/preferences/prefs_widgets.h
 modules/gui/macosx/preferences/prefs_widgets.m
+modules/gui/macosx/redesign/VLCOnboardingWindowController.m
+modules/gui/macosx/redesign/VLCRedesignCompactBrowser.m
+modules/gui/macosx/redesign/VLCRedesignInspector.m
+modules/gui/macosx/redesign/VLCRedesignPlayerChrome.m
+modules/gui/macosx/redesign/VLCRedesignQueuePanel.m
+modules/gui/macosx/redesign/VLCRedesignResumePrompt.m
+modules/gui/macosx/redesign/VLCRedesignSeekPreview.m
+modules/gui/macosx/redesign/VLCRedesignSubtitleControls.m
+modules/gui/macosx/redesign/VLCRedesignTrackPanel.m
 modules/gui/macosx/views/VLCBottomBarView.h
 modules/gui/macosx/views/VLCBottomBarView.m
 modules/gui/macosx/views/VLCDefaultValueSlider.h

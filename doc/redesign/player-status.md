@@ -305,3 +305,17 @@ size regression failed against the previous renderer: 24px and 48px produced the
 same height. The corrected renderer produces distinct 21- and 42-pixel glyph
 bounds for those requested font sizes. These are renderer checks; native paused
 caption appearance acceptance is still pending.
+
+The subtitle inspector now exposes installed font families, hex color entry
+and native color wells for text, outline and background, and Relative / Pixels
+size modes. Switching modes preserves the last relative scale and pixel size.
+Eleven native component checks pass for valid and invalid color entry, swatch
+actions, read-only refresh, disabled state, text alignment, narrow row geometry
+and size-mode actions. The Mac module builds successfully and all translation
+catalog paths exist.
+
+For a seekable paused input, appearance changes debounce a precise seek to the
+same position to decode the cue again; already-rendered regions no longer keep
+their original text. The request checks the input identity and paused state
+again before seeking. Live MKV acceptance of that redraw and the new inspector
+controls is pending while computer use reports the Mac locked.

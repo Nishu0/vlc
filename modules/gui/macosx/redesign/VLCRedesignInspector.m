@@ -8,6 +8,7 @@
 #import "VLCRedesignAppearance.h"
 #import "VLCRedesignPanelButton.h"
 #import "VLCRedesignTextLayout.h"
+#import "VLCRedesignSubtitleControls.h"
 #import "extensions/NSString+Helpers.h"
 #import "library/VLCInputItem.h"
 #import "main/VLCMain.h"
@@ -339,6 +340,8 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
 @property NSMutableDictionary<NSString *, VLCInspectorNumberRow *> *numberRows;
 @property NSMutableDictionary<NSString *, NSPopUpButton *> *popups;
 @property NSMutableDictionary<NSString *, NSButton *> *toggles;
+@property NSMutableDictionary<NSString *, VLCRedesignColorRow *> *colorRows;
+@property VLCRedesignSizeModeRow *sizeMode;
 @property NSTimer *refreshTimer;
 @end
 
@@ -517,6 +520,21 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     [_content addObject:button];
 }
 
+- (void)addColor:(NSString *)key title:(NSString *)title
+{
+    VLCRedesignColorRow *row = [[VLCRedesignColorRow alloc] initWithTitle:title];
+    __weak typeof(self) weakSelf = self;
+    row.changed = ^(uint32_t RGB) {
+        typeof(self) strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+        config_PutInt(key.UTF8String, RGB);
+        [strongSelf.player refreshPausedSubtitleAppearance];
+    };
+    _colorRows[key] = row;
+    [_content addObject:row];
+}
+
 - (void)buildContent
 {
     [self.window makeFirstResponder:nil];
@@ -526,6 +544,8 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     _numberRows = [NSMutableDictionary dictionary];
     _popups = [NSMutableDictionary dictionary];
     _toggles = [NSMutableDictionary dictionary];
+    _colorRows = [NSMutableDictionary dictionary];
+    _sizeMode = nil;
     NSArray *roles = @[ @"playback", @"video", @"audio", @"subtitles" ];
     for (NSUInteger i = 0; i < _tabs.count; i++) {
         BOOL selected = (NSInteger)i == _selectedTab;
@@ -640,15 +660,37 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     speed.field.toolTip = speed.slider.toolTip = _NS("Frame rate for external subtitles. Auto (0) uses source timing.");
     [self addNumber:@"subsdelay-factor" title:_NS("Subtitle Duration Factor") minimum:0 maximum:20 unit:@""];
     [self addHeading:_NS("Appearance")];
-    [self addNumber:@"subtitle-scale" title:_NS("Subtitle Size") minimum:10 maximum:500 unit:@"%"];
+    [self addToggle:@"embedded-sub-format" title:_NS("Embedded Subtitle Formatting")];
+    NSArray<NSString *> *families = [NSFontManager.sharedFontManager.availableFontFamilies
+        sortedArrayUsingSelector:@selector(localizedStandardCompare:)];
+    [self addPopup:@"freetype-font" title:_NS("Subtitle Font")
+             labels:[@[_NS("Automatic")] arrayByAddingObjectsFromArray:families]
+             values:[@[@""] arrayByAddingObjectsFromArray:families]];
+    [self addColor:@"freetype-color" title:_NS("Text Color")];
+    [self addColor:@"freetype-outline-color" title:_NS("Outline Color")];
     [self addNumber:@"sub-margin" title:_NS("Vertical Position") minimum:0 maximum:500 unit:@"px"];
+    _sizeMode = [[VLCRedesignSizeModeRow alloc] init];
+    __weak typeof(self) weakSelf = self;
+    _sizeMode.changed = ^(BOOL pixelMode) {
+        typeof(self) strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+        [strongSelf.window makeFirstResponder:nil];
+        NSInteger pixels = [NSUserDefaults.standardUserDefaults integerForKey:@"VLCRedesignSubtitlePixelSize"];
+        if (pixels < 1 || pixels > 512)
+            pixels = 24;
+        config_PutInt("freetype-font-size", pixelMode ? pixels : 0);
+        [strongSelf.player refreshPausedSubtitleAppearance];
+        [strongSelf refresh];
+    };
+    [_content addObject:_sizeMode];
+    [self addNumber:@"subtitle-scale" title:_NS("Relative Size") minimum:10 maximum:500 unit:@"%"];
+    VLCInspectorNumberRow *pixels = [self addNumber:@"freetype-font-size" title:_NS("Pixel Size")
+                                            minimum:1 maximum:512 unit:@"px"];
+    pixels.field.toolTip = pixels.slider.toolTip = _NS("Font size in the subtitle canvas. Video scaling also scales subtitles.");
     [self addNumber:@"freetype-outline-thickness" title:_NS("Outline Thickness") minimum:0 maximum:50 unit:@""];
     [self addNumber:@"freetype-background-opacity" title:_NS("Background Opacity") minimum:0 maximum:100 unit:@"%"];
-
-    [self addPopup:@"freetype-color"
-             title:_NS("Text Color")
-            labels:@[ _NS("White"), _NS("Yellow"), _NS("Green"), _NS("Cyan") ]
-            values:@[ @0xFFFFFF, @0xFFFF00, @0x00FF00, @0x00FFFF ]];
+    [self addColor:@"freetype-background-color" title:_NS("Background Color")];
     [self addAction:_NS("Reset Subtitle Timing") selector:@selector(resetSubtitleTiming:)];
 }
 
@@ -696,6 +738,23 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     [_numberRows[@"subtitle-delay"] updateValue:secf_from_vlc_tick(player.subtitlesDelay) enabled:media];
     [_numberRows[@"subtitle-fps"] updateValue:player.subtitlesFPS enabled:media];
     [_numberRows[@"subtitle-scale"] updateValue:player.subtitleTextScalingFactor enabled:media];
+    if (_sizeMode) {
+        NSInteger pixels = config_GetInt("freetype-font-size");
+        BOOL pixelMode = pixels > 0;
+        _sizeMode.pixelMode = pixelMode;
+        if (_numberRows[@"subtitle-scale"].hidden != pixelMode ||
+            _numberRows[@"freetype-font-size"].hidden == pixelMode) {
+            _numberRows[@"subtitle-scale"].hidden = pixelMode;
+            _numberRows[@"freetype-font-size"].hidden = !pixelMode;
+            self.needsLayout = YES;
+        }
+        [_numberRows[@"freetype-font-size"] updateValue:pixels enabled:media];
+        _toggles[@"embedded-sub-format"].enabled = media;
+        _toggles[@"embedded-sub-format"].state = !config_GetInt("freetype-override-styles");
+        char *font = config_GetPsz("freetype-font");
+        [self selectValue:font ? [NSString stringWithUTF8String:font] : @"" popup:_popups[@"freetype-font"]];
+        free(font);
+    }
     _toggles[@"reverse"].enabled = media && player.rewindable;
     _toggles[@"reverse"].state = player.playbackRate < 0 ? NSControlStateValueOn : NSControlStateValueOff;
     for (NSString *key in @[ @"audio-language", @"sub-language" ]) {
@@ -762,8 +821,10 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     [_numberRows[@"freetype-outline-thickness"] updateValue:config_GetInt("freetype-outline-thickness") enabled:media];
     [_numberRows[@"freetype-background-opacity"] updateValue:config_GetInt("freetype-background-opacity") * 100. / 255
                                                      enabled:media];
-    for (NSString *key in @[ @"freetype-color" ])
-        [self selectValue:@(config_GetInt(key.UTF8String)) popup:_popups[key]];
+    for (NSString *key in _colorRows) {
+        _colorRows[key].RGB = (uint32_t)config_GetInt(key.UTF8String);
+        _colorRows[key].enabled = media;
+    }
     audio_output_t *aout = player.mainAudioOutput;
     for (NSString *key in @[ @"compressor", @"spatializer", @"stereo_widen" ]) {
         _toggles[key].enabled = aout != NULL;
@@ -803,12 +864,16 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     } else if ([key hasPrefix:@"freetype-"]) {
         config_PutInt(key.UTF8String,
                       lround([key isEqualToString:@"freetype-background-opacity"] ? value * 255 / 100 : value));
+        if ([key isEqualToString:@"freetype-font-size"])
+            [NSUserDefaults.standardUserDefaults setInteger:lround(value) forKey:@"VLCRedesignSubtitlePixelSize"];
+        [player refreshPausedSubtitleAppearance];
     } else if ([key isEqualToString:@"sub-margin"]) {
         vout_thread_t *vout = player.mainVideoOutputThread;
         if (vout) {
             var_SetInteger(vout, "sub-margin", lround(value));
             vout_Release(vout);
         }
+        [player refreshPausedSubtitleAppearance];
     } else {
         BOOL duration = [key isEqualToString:@"subsdelay-factor"];
         vlc_value_t vlcValue = {.f_float = value};
@@ -829,8 +894,9 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
             minutes > 0 ? [NSDate dateWithTimeIntervalSinceNow:minutes * 60] : nil;
     } else if ([key isEqualToString:@"audio-language"] || [key isEqualToString:@"sub-language"]) {
         [player setPreferredLanguage:value forCategory:[key isEqualToString:@"audio-language"] ? AUDIO_ES : SPU_ES];
-    } else if ([key hasPrefix:@"freetype-"]) {
-        config_PutInt(key.UTF8String, [value integerValue]);
+    } else if ([key isEqualToString:@"freetype-font"]) {
+        config_PutPsz("freetype-font", [value UTF8String]);
+        [player refreshPausedSubtitleAppearance];
     } else if ([key isEqualToString:@"equalizer"]) {
         BOOL enabled = [value isKindOfClass:NSNumber.class];
         [player enableAudioFilterWithName:@"equalizer" state:enabled];
@@ -877,6 +943,9 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
             self.player.playbackRate = fabs(self.player.playbackRate) * (enabled ? -1 : 1);
     } else if ([key isEqualToString:@"adjust"]) {
         [self.player enableVideoFilterWithName:key state:enabled];
+    } else if ([key isEqualToString:@"embedded-sub-format"]) {
+        config_PutInt("freetype-override-styles", !enabled);
+        [self.player refreshPausedSubtitleAppearance];
     } else {
         [self.player enableAudioFilterWithName:key state:enabled];
     }
@@ -939,6 +1008,8 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     _scroll.frame = NSMakeRect(0, 50, width, MAX(0, NSHeight(self.bounds) - 50));
     CGFloat y = 12;
     for (NSView *view in _content) {
+        if (view.hidden)
+            continue;
         CGFloat height = NSHeight(view.frame);
         if (view == _content.lastObject)
             y = MAX(y, NSHeight(_scroll.contentView.bounds) - height - 12);

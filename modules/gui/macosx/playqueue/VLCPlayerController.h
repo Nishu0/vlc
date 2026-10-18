@@ -703,6 +703,10 @@ extern const CGFloat VLCVolumeDefault;
  */
 @property (readwrite, nonatomic) unsigned int subtitleTextScalingFactor;
 
+/** Refresh cached text cues after changing appearance while paused. Changes
+ * coalesce into a precise same-position seek on the same seekable input. */
+- (void)refreshPausedSubtitleAppearance;
+
 /**
  * enable recording of the current media or check if it is being done
  * @note listen to VLCPlayerRecordingChanged to be notified about changes to this property

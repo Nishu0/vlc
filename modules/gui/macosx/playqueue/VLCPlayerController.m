@@ -120,6 +120,7 @@ const CGFloat VLCVolumeDefault = 1.;
 @property (readwrite, atomic) struct vlc_player_timer_point playerTime;
 @property (readwrite, atomic) NSTimer *positionTimer;
 @property (readwrite, atomic) NSTimer *timeTimer;
+@property NSTimer *subtitleAppearanceTimer;
 
 - (int)interpolateTime:(vlc_tick_t)system_now;
 - (void)updatePositionWithTimer:(NSTimer *)timer;
@@ -719,6 +720,8 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
+    [_subtitleAppearanceTimer invalidate];
+    _subtitleAppearanceTimer = nil;
     libvlc_int_t *libvlc = vlc_object_instance(getIntf());
     var_DelCallback(libvlc, "intf-boss", BossCallback, (__bridge void *)self);
 
@@ -745,6 +748,7 @@ static int BossCallback(vlc_object_t *p_this,
 
 - (void)dealloc
 {
+    [_subtitleAppearanceTimer invalidate];
     [_defaultNotificationCenter removeObserver:self];
 }
 
@@ -1585,6 +1589,39 @@ static int BossCallback(vlc_object_t *p_this,
     vlc_player_Lock(_p_player);
     vlc_player_SetSubtitleTextScale(_p_player, subtitleTextScalingFactor);
     vlc_player_Unlock(_p_player);
+    [self refreshPausedSubtitleAppearance];
+}
+
+- (void)refreshPausedSubtitleAppearance
+{
+    [_subtitleAppearanceTimer invalidate];
+    _subtitleAppearanceTimer = nil;
+    vlc_player_Lock(_p_player);
+    BOOL refresh = vlc_player_GetState(_p_player) == VLC_PLAYER_STATE_PAUSED &&
+                   vlc_player_CanSeek(_p_player);
+    vlc_player_Unlock(_p_player);
+    VLCInputItem * const media = refresh ? self.currentMedia : nil;
+    if (!media)
+        return;
+    __weak typeof(self) weakSelf = self;
+    _subtitleAppearanceTimer = [NSTimer timerWithTimeInterval:.2 repeats:NO block:^(NSTimer *__unused timer) {
+        typeof(self) strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+        strongSelf.subtitleAppearanceTimer = nil;
+        vlc_player_t * const player = strongSelf->_p_player;
+        vlc_player_Lock(player);
+        vlc_tick_t time = vlc_player_GetTime(player);
+        /* Rendered subtitle regions no longer retain their original text.
+         * Re-decode the paused cue instead of reusing its old bitmap. Never
+         * seek an input that has changed or resumed during the debounce. */
+        if (vlc_player_GetCurrentMedia(player) == media.vlcInputItem &&
+            vlc_player_GetState(player) == VLC_PLAYER_STATE_PAUSED &&
+            vlc_player_CanSeek(player) && time >= 0)
+            vlc_player_SeekByTime(player, time, VLC_PLAYER_SEEK_PRECISE, VLC_PLAYER_WHENCE_ABSOLUTE);
+        vlc_player_Unlock(player);
+    }];
+    [NSRunLoop.mainRunLoop addTimer:_subtitleAppearanceTimer forMode:NSRunLoopCommonModes];
 }
 
 - (int)addAssociatedMediaToCurrentFromURL:(NSURL *)URL
