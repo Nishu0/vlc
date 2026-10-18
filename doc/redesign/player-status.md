@@ -248,3 +248,11 @@ fullscreen top/bottom edges, leaving the window, open panels and windowed mode.
 The computer-use tool's fullscreen coordinate clicks did not move the physical
 pointer reported by AppKit; physical edge-hover acceptance remains separate
 from those component checks.
+
+An early two-file command-line launch also exposed an existing startup race:
+embedded output could request the library window before
+`applicationDidFinishLaunching` created its controller, causing a nil-window
+dictionary insertion. The library window now creates its controller on first
+access, matching the other lazy interface controllers. The same two-file launch
+now opens video and its resume notification; switching to the second item
+cancels that notification without carrying its old resume action across.

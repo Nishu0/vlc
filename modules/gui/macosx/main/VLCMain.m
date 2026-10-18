@@ -515,6 +515,10 @@ static VLCMain *sharedInstance = nil;
 
 - (VLCLibraryWindow *)libraryWindow
 {
+    /* Command-line playback may request its embedded video window before
+     * applicationDidFinishLaunching creates the library controller. */
+    if (_libraryWindowController == nil)
+        _libraryWindowController = [[VLCLibraryWindowController alloc] initWithLibraryWindow];
     return (VLCLibraryWindow *)_libraryWindowController.window;
 }
 
