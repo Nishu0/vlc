@@ -34,6 +34,19 @@ an injected expiration handler, so it does not start or stop VLC playback.
 Compile it with the same command, replacing `file-drop.m` with `inspector.m` and
 choosing a distinct executable name.
 
+`subtitle-controls.m` checks hex color validation, native color-well actions,
+refresh without edit callbacks, disabled controls, alignment and narrow layouts,
+and Relative / Pixels mode actions. Compile it like `inspector.m`.
+
+`audio-inspector.m` builds the production audio inspector controls around an
+isolated libVLC player using dummy audio output and a supplied stereo WAV. It
+checks module-backed parameter availability, numeric edits reaching that output,
+disclosure actions and reset to actual module defaults. Compile it like
+`window-commands.m`, replacing that source and executable name. Run it with the
+built GUI module followed by the absolute WAV path. It neither opens a native
+player nor uses an audio device; audible quality and running-app layout remain
+separate acceptance checks.
+
 `resume-prompt.m` checks timestamp display, non-overlapping controls at three
 widths, Continue/Dismiss dispatch and one-shot completion. It does not resume
 actual media; that is covered by running-app acceptance of the controller path.

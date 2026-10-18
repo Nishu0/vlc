@@ -319,3 +319,18 @@ same position to decode the cue again; already-rendered regions no longer keep
 their original text. The request checks the input identity and paused state
 again before seeking. Live MKV acceptance of that redraw and the new inspector
 controls is pending while computer use reports the Mac locked.
+
+## Inline audio filter parameters
+
+The audio inspector's compressor, spatializer and stereo widener now each have
+an Expand Settings section. Sixteen numeric fields/sliders use the filters'
+actual configuration ranges, help text and reset defaults. Edits update the
+current audio output through the same variables as VLC's native effects editor.
+Parameters are disabled while their filter is off; expansion is retained while
+switching inspector tabs. The existing advanced audio editor remains available.
+
+The Mac module builds and sixteen checks pass against an isolated libVLC player
+with real stereo WAV playback through dummy audio output. They cover all sixteen
+parameters being available, edits on each filter reaching the active output,
+disclosure actions, and reset to module defaults. Native visual review and
+audible effect checks remain pending.

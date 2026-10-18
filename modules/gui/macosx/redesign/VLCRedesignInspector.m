@@ -342,6 +342,9 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
 @property NSMutableDictionary<NSString *, NSButton *> *toggles;
 @property NSMutableDictionary<NSString *, VLCRedesignColorRow *> *colorRows;
 @property VLCRedesignSizeModeRow *sizeMode;
+@property NSMutableDictionary<NSString *, NSString *> *audioParameters;
+@property NSMutableDictionary<NSString *, NSArray<NSView *> *> *audioGroups;
+@property NSMutableSet<NSString *> *expandedAudioGroups;
 @property NSTimer *refreshTimer;
 @end
 
@@ -383,6 +386,7 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
         [tabs addObject:button];
     }
     _tabs = tabs;
+    _expandedAudioGroups = [NSMutableSet set];
     _document = [[VLCInspectorDocument alloc] init];
     _scroll = [[NSScrollView alloc] init];
     _scroll.drawsBackground = NO;
@@ -546,6 +550,8 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     _toggles = [NSMutableDictionary dictionary];
     _colorRows = [NSMutableDictionary dictionary];
     _sizeMode = nil;
+    _audioParameters = [NSMutableDictionary dictionary];
+    _audioGroups = [NSMutableDictionary dictionary];
     NSArray *roles = @[ @"playback", @"video", @"audio", @"subtitles" ];
     for (NSUInteger i = 0; i < _tabs.count; i++) {
         BOOL selected = (NSInteger)i == _selectedTab;
@@ -628,9 +634,88 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     }
     [self addPopup:@"equalizer" title:_NS("Equalizer") labels:labels values:values];
     [self addToggle:@"compressor" title:_NS("Compressor")];
+    [self addAudioParameters:@"compressor" keys:@[
+        @"compressor-rms-peak", @"compressor-attack", @"compressor-release", @"compressor-threshold",
+        @"compressor-ratio", @"compressor-knee", @"compressor-makeup-gain"
+    ]];
     [self addToggle:@"spatializer" title:_NS("Spatializer")];
+    [self addAudioParameters:@"spatializer" keys:@[
+        @"spatializer-roomsize", @"spatializer-width", @"spatializer-wet", @"spatializer-dry", @"spatializer-damp"
+    ]];
     [self addToggle:@"stereo_widen" title:_NS("Stereo Widener")];
+    [self addAudioParameters:@"stereo_widen" keys:@[
+        @"stereowiden-delay", @"stereowiden-feedback", @"stereowiden-crossfeed", @"stereowiden-dry-mix"
+    ]];
     [self addAction:_NS("Expand Audio Filters") selector:@selector(expandAudio:)];
+}
+
+- (void)addAudioParameters:(NSString *)filter keys:(NSArray<NSString *> *)keys
+{
+    NSMutableArray<NSView *> *rows = [NSMutableArray array];
+    for (NSString *key in keys) {
+        module_config_t *option = config_FindConfig(key.UTF8String);
+        if (!option || config_GetType(key.UTF8String) != VLC_VAR_FLOAT || option->min.f >= option->max.f)
+            continue;
+        NSString *unit = @"";
+        if ([key hasSuffix:@"attack"] || [key hasSuffix:@"release"] || [key isEqualToString:@"stereowiden-delay"])
+            unit = @"ms";
+        else if ([key hasSuffix:@"threshold"] || [key hasSuffix:@"knee"] || [key hasSuffix:@"makeup-gain"])
+            unit = @"dB";
+        else if ([key hasSuffix:@"ratio"])
+            unit = @"×";
+        VLCInspectorNumberRow *row = [self addNumber:key title:_NS(option->psz_text)
+                                            minimum:option->min.f maximum:option->max.f unit:unit];
+        row.field.toolTip = row.slider.toolTip = option->psz_longtext ? _NS(option->psz_longtext) : nil;
+        _audioParameters[key] = filter;
+        [rows addObject:row];
+        [_content removeLastObject];
+    }
+    if (!rows.count)
+        return;
+    VLCRedesignPanelButton *disclosure = [[VLCRedesignPanelButton alloc] init];
+    disclosure.frame = NSMakeRect(0, 0, 400, 44);
+    disclosure.footer = YES;
+    disclosure.title = [_expandedAudioGroups containsObject:filter] ? _NS("Collapse Settings") : _NS("Expand Settings");
+    disclosure.accessibilityLabel = [NSString stringWithFormat:_NS("%@ settings"), _toggles[filter].title];
+    __weak typeof(self) weakSelf = self;
+    __weak VLCRedesignPanelButton *weakDisclosure = disclosure;
+    disclosure.activate = ^{
+        typeof(self) strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+        [strongSelf.window makeFirstResponder:nil];
+        BOOL expanded = ![strongSelf.expandedAudioGroups containsObject:filter];
+        if (expanded)
+            [strongSelf.expandedAudioGroups addObject:filter];
+        else
+            [strongSelf.expandedAudioGroups removeObject:filter];
+        weakDisclosure.title = expanded ? _NS("Collapse Settings") : _NS("Expand Settings");
+        for (NSView *row in strongSelf.audioGroups[filter])
+            row.hidden = !expanded;
+        strongSelf.needsLayout = YES;
+    };
+    [_content addObject:disclosure];
+    VLCRedesignPanelButton *reset = [[VLCRedesignPanelButton alloc] init];
+    reset.frame = NSMakeRect(0, 0, 400, 44);
+    reset.title = _NS("Reset Filter");
+    reset.accessibilityLabel = [NSString stringWithFormat:_NS("Reset %@"), _toggles[filter].title];
+    reset.activate = ^{
+        typeof(self) strongSelf = weakSelf;
+        if (!strongSelf)
+            return;
+        [strongSelf.window makeFirstResponder:nil];
+        for (NSString *key in keys) {
+            module_config_t *option = config_FindConfig(key.UTF8String);
+            if (strongSelf.audioParameters[key] && option)
+                [strongSelf applyNumber:option->orig.f forKey:key];
+        }
+        [strongSelf refresh];
+    };
+    [rows addObject:reset];
+    for (NSView *row in rows)
+        row.hidden = ![_expandedAudioGroups containsObject:filter];
+    _audioGroups[filter] = rows;
+    [_content addObjectsFromArray:rows];
 }
 
 - (void)addLanguagePopup:(NSString *)key
@@ -829,6 +914,12 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     for (NSString *key in @[ @"compressor", @"spatializer", @"stereo_widen" ]) {
         _toggles[key].enabled = aout != NULL;
         _toggles[key].state = aout && [self filterEnabled:key object:VLC_OBJECT(aout) variable:"audio-filter"];
+        ((NSControl *)_audioGroups[key].lastObject).enabled = aout != NULL;
+    }
+    for (NSString *key in _audioParameters) {
+        NSString *filter = _audioParameters[key];
+        [_numberRows[key] updateValue:aout ? var_InheritFloat(aout, key.UTF8String) : 0
+                             enabled:aout && _toggles[filter].state == NSControlStateValueOn];
     }
     _popups[@"equalizer"].enabled = aout != NULL;
     if (aout) {
@@ -861,6 +952,14 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
         player.subtitlesFPS = value;
     } else if ([key isEqualToString:@"subtitle-scale"]) {
         player.subtitleTextScalingFactor = (unsigned int)lround(value);
+    } else if (_audioParameters[key]) {
+        audio_output_t *aout = player.mainAudioOutput;
+        if (aout) {
+            if (!var_Type(aout, key.UTF8String))
+                var_Create(aout, key.UTF8String, VLC_VAR_FLOAT | VLC_VAR_DOINHERIT);
+            var_SetFloat(aout, key.UTF8String, value);
+            aout_Release(aout);
+        }
     } else if ([key hasPrefix:@"freetype-"]) {
         config_PutInt(key.UTF8String,
                       lround([key isEqualToString:@"freetype-background-opacity"] ? value * 255 / 100 : value));
