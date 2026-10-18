@@ -175,3 +175,29 @@ maintainer review.
 The full native package at `a835ba0a9e` was staged outside the working build copy and launched with the supplied local MKV. Video and English subtitles rendered, and all 19 embedded subtitle rows populated. The app and disk image passed signature/checksum verification; paths and hashes are in [build status](build-status.md).
 
 This is not the complete VLC redesign or a Windows build.
+
+## Player acceptance follow-up, October 18
+
+A separate QA bundle identity and media-library directory isolate playback
+history, preferences and playlists from the normal app. Native testing confirmed
+the resume notification's correct seconds, Continue action, Dismiss, Escape and
+ten-second timeout. Continue sought to the saved position; the other choices
+kept playback near the beginning. Placement was visually checked above the
+transport in the narrower layout. Resize and media-change cancellation still
+need their own acceptance checks.
+
+Paused seeking reproduced an underlying decoder problem: subtitle decoders
+requested more input through the next-frame path without consuming its video
+countdown, so a seek could demux to EOF while the interface displayed the target
+time. Only video decoders now request that extra buffering. A deterministic
+regression failed before the correction, consuming cues to the end of a
+180-second source after seeking to 60 seconds. It passes afterward with the
+last buffered cue at 60.32 seconds; all 14 input-decoder scenarios pass.
+
+The rebuilt core retains the supplied MKV through repeated paused long seeks
+and shows the corresponding scenes. Further testing identified a separate
+VideoToolbox allocation-pacing stall when resuming: the video decoder can wait
+for pictures held by the paused output before it processes the unpause command.
+That issue is still under investigation. Subtitle size was seen at 150%, but
+live redraw of an already rendered paused cue also needs further work. This
+follow-up does not declare the player acceptance gate complete.

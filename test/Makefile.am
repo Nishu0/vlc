@@ -358,6 +358,9 @@ test_src_input_decoder_SOURCES = \
 	src/input/decoder/input_decoder.h \
 	src/input/decoder/input_decoder_scenarios.c
 test_src_input_decoder_LDADD = $(LIBVLCCORE) $(LIBVLC)
+if HAVE_DARWIN
+test_src_input_decoder_LDFLAGS = $(AM_LDFLAGS) -Wl,-exported_symbol,_vlc_static_modules
+endif
 
 test_src_misc_chroma_probe_SOURCES = src/misc/chroma_probe.c
 test_src_misc_chroma_probe_LDADD = $(LIBVLCCORE) $(LIBVLC)

@@ -34,6 +34,7 @@
 #include <vlc_codec.h>
 #include <vlc_filter.h>
 #include <vlc_vout_display.h>
+#include <stdatomic.h>
 
 #include "input_decoder.h"
 
@@ -48,6 +49,85 @@ static struct scenario_data
     size_t decoder_image_sent;
     size_t cc_track_idx;
 } scenario_data;
+
+static atomic_bool paused_seek_ready;
+static vlc_mutex_t paused_seek_lock = VLC_STATIC_MUTEX;
+static vlc_cond_t paused_seek_cond = VLC_STATIC_COND;
+static vlc_cond_t paused_seek_state_cond = VLC_STATIC_COND;
+static vlc_tick_t paused_seek_subtitle_pts;
+
+static int decoder_decode_paused_seek(decoder_t *dec, picture_t *pic)
+{
+    decoder_QueueVideo(dec, pic);
+    if (!atomic_exchange(&paused_seek_ready, true))
+        vlc_sem_post(&scenario_data.wait_ready_to_flush);
+    return VLC_SUCCESS;
+}
+
+static void subtitle_setup_paused_seek(decoder_t *dec)
+{
+    assert(dec->fmt_in->i_cat == SPU_ES);
+    dec->fmt_out.i_codec = VLC_CODEC_TEXT;
+}
+
+static int subtitle_decode_paused_seek(decoder_t *dec, vlc_frame_t *frame)
+{
+    (void) dec;
+    vlc_mutex_lock(&paused_seek_lock);
+    paused_seek_subtitle_pts = frame->i_pts;
+    vlc_cond_signal(&paused_seek_cond);
+    vlc_mutex_unlock(&paused_seek_lock);
+    return VLC_SUCCESS;
+}
+
+static void player_setup_paused_seek(vlc_player_t *player)
+{
+    atomic_store(&paused_seek_ready, false);
+    paused_seek_subtitle_pts = VLC_TICK_INVALID;
+    vlc_player_SelectTracksByStringIds(player, SPU_ES, "spu/0");
+}
+
+static void paused_seek_state_changed(vlc_player_t *player,
+                                     enum vlc_player_state state, void *data)
+{
+    (void) player; (void) state; (void) data;
+    vlc_cond_signal(&paused_seek_state_cond);
+}
+
+static void interface_setup_paused_seek(intf_thread_t *intf)
+{
+    vlc_player_t *player = (vlc_player_t *) intf->p_sys;
+    vlc_sem_wait(&scenario_data.wait_ready_to_flush);
+    vlc_player_Lock(player);
+    static const struct vlc_player_cbs cbs = {
+        .on_state_changed = paused_seek_state_changed,
+    };
+    vlc_player_listener_id *listener = vlc_player_AddListener(player, &cbs, NULL);
+    assert(listener != NULL);
+    vlc_player_Pause(player);
+    while (vlc_player_GetState(player) != VLC_PLAYER_STATE_PAUSED)
+        vlc_player_CondWait(player, &paused_seek_state_cond);
+    vlc_player_SetTime(player, VLC_TICK_FROM_SEC(60));
+    vlc_player_RemoveListener(player, listener);
+    vlc_player_Unlock(player);
+    /* A paused subtitle decoder may consume buffered cues, but must not ask
+     * the input to demux the rest of the movie while waiting for video. */
+    vlc_mutex_lock(&paused_seek_lock);
+    vlc_tick_t deadline = vlc_tick_now() + VLC_TICK_FROM_SEC(2);
+    while (paused_seek_subtitle_pts < VLC_TICK_FROM_SEC(60))
+        if (vlc_cond_timedwait(&paused_seek_cond, &paused_seek_lock, deadline))
+            break;
+    deadline = vlc_tick_now() + VLC_TICK_FROM_MS(250);
+    while (paused_seek_subtitle_pts < VLC_TICK_FROM_SEC(65))
+        if (vlc_cond_timedwait(&paused_seek_cond, &paused_seek_lock, deadline))
+            break;
+    vlc_tick_t last = paused_seek_subtitle_pts;
+    vlc_mutex_unlock(&paused_seek_lock);
+    fprintf(stderr, "Last subtitle after paused seek: %"PRId64"\n", last);
+    assert(last >= VLC_TICK_FROM_SEC(60));
+    assert(last < VLC_TICK_FROM_SEC(65));
+    vlc_sem_post(&scenario_data.wait_stop);
+}
 
 static void decoder_fixed_size(decoder_t *dec, vlc_fourcc_t chroma,
         unsigned width, unsigned height)
@@ -614,6 +694,17 @@ static const vlc_fourcc_t subpicture_chromas[] = {
 #define source_800_600 "mock://video_track_count=1;length=100000000000;video_width=800;video_height=600"
 struct input_decoder_scenario input_decoder_scenarios[] =
 {{
+    .name = "paused subtitle decoding does not demux to EOF after a seek",
+    .source = "mock://video_track_count=1;sub_track_count=1;length=180000000;video_width=800;video_height=600",
+    .decoder_setup = decoder_i420_800_600_update,
+    .decoder_decode = decoder_decode_paused_seek,
+    .cc_decoder_setup = subtitle_setup_paused_seek,
+    .cc_decoder_decode = subtitle_decode_paused_seek,
+    .display_prepare = display_prepare_noop,
+    .player_setup_before_start = player_setup_paused_seek,
+    .interface_setup = interface_setup_paused_seek,
+},
+{
     .name = "decoder is flushed",
     .source = source_800_600,
     .decoder_setup = decoder_i420_800_600,
