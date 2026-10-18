@@ -2900,6 +2900,12 @@ void vlc_input_decoder_ChangePause( vlc_input_decoder_t *p_owner,
     p_owner->paused = b_paused;
     p_owner->pause_date = i_date;
     p_owner->frames_countdown = 0;
+    /* An asynchronous decoder can be blocked in its allocation pacer while
+     * the paused vout retains its pictures. Let the output release those
+     * pictures now rather than waiting for that decode call to return. The
+     * decoder thread still reports the new output pause date as usual. */
+    if (!b_paused && p_owner->cat == VIDEO_ES && p_owner->output_paused)
+        Decoder_ChangeOutputPause(p_owner, false, i_date);
     vlc_fifo_Signal( p_owner->p_fifo );
     vlc_fifo_Unlock( p_owner->p_fifo );
 }

@@ -225,6 +225,96 @@ static picture_context_t * context_copy(picture_context_t *context)
     return context;
 }
 
+static atomic_bool paused_resume_prepared;
+static atomic_bool paused_resume_blocked;
+static vlc_sem_t paused_resume_ready;
+static vlc_sem_t paused_resume_done;
+
+static void player_setup_paused_resume(vlc_player_t *player)
+{
+    (void) player;
+    atomic_store(&paused_resume_prepared, false);
+    atomic_store(&paused_resume_blocked, false);
+    vlc_sem_init(&paused_resume_ready, 0);
+    vlc_sem_init(&paused_resume_done, 0);
+}
+
+static void display_prepare_paused_resume(vout_display_t *vd, picture_t *pic)
+{
+    (void) vd;
+    if (pic->context != NULL)
+    {
+        struct picture_watcher_context *watcher =
+            container_of(pic->context, struct picture_watcher_context, context);
+        vlc_sem_post(&watcher->wait_prepare);
+    }
+    else if (!atomic_exchange(&paused_resume_prepared, true))
+        vlc_sem_post(&scenario_data.wait_ready_to_flush);
+}
+
+static int decoder_decode_paused_resume(decoder_t *dec, picture_t *pic)
+{
+    if (pic->date < VLC_TICK_FROM_SEC(60) ||
+        atomic_exchange(&paused_resume_blocked, true))
+    {
+        decoder_QueueVideo(dec, pic);
+        return VLC_SUCCESS;
+    }
+
+    struct picture_watcher_context watcher = {
+        .context.destroy = context_destroy,
+        .context.copy = context_copy,
+    };
+    vlc_atomic_rc_init(&watcher.rc);
+    vlc_sem_init(&watcher.wait_picture, 0);
+    vlc_sem_init(&watcher.wait_prepare, 0);
+    picture_t *next = picture_NewFromFormat(&dec->fmt_out.video);
+    assert(next != NULL);
+    /* Keep the queued picture clear of the late-picture drop threshold. */
+    next->date = pic->date + VLC_TICK_FROM_MS(250);
+    next->b_progressive = true;
+    pic->b_force = true;
+    pic->context = &watcher.context;
+    decoder_QueueVideo(dec, pic);
+    vlc_sem_wait(&watcher.wait_prepare);
+    decoder_QueueVideo(dec, next);
+    vlc_sem_post(&paused_resume_ready);
+    /* Model an asynchronous decoder whose allocation limit is reached by
+     * pictures retained in a paused output. Resume must release a slot without
+     * waiting for this decode call to return. */
+    vlc_sem_wait(&watcher.wait_picture);
+    vlc_sem_post(&paused_resume_done);
+    return VLC_SUCCESS;
+}
+
+static void interface_setup_paused_resume(intf_thread_t *intf)
+{
+    vlc_player_t *player = (vlc_player_t *) intf->p_sys;
+    vlc_sem_wait(&scenario_data.wait_ready_to_flush);
+    vlc_player_Lock(player);
+    static const struct vlc_player_cbs cbs = {
+        .on_state_changed = paused_seek_state_changed,
+    };
+    vlc_player_listener_id *listener = vlc_player_AddListener(player, &cbs, NULL);
+    assert(listener != NULL);
+    vlc_player_Pause(player);
+    while (vlc_player_GetState(player) != VLC_PLAYER_STATE_PAUSED)
+        vlc_player_CondWait(player, &paused_seek_state_cond);
+    vlc_player_SetTime(player, VLC_TICK_FROM_SEC(60));
+    vlc_player_RemoveListener(player, listener);
+    vlc_player_Unlock(player);
+    int ret = vlc_sem_timedwait(&paused_resume_ready,
+                              vlc_tick_now() + VLC_TICK_FROM_SEC(2));
+    assert(ret == 0);
+    vlc_player_Lock(player);
+    vlc_player_Resume(player);
+    vlc_player_Unlock(player);
+    ret = vlc_sem_timedwait(&paused_resume_done,
+                          vlc_tick_now() + VLC_TICK_FROM_SEC(2));
+    assert(ret == 0);
+    vlc_sem_post(&scenario_data.wait_stop);
+}
+
 static int decoder_decode_drop(decoder_t *dec, picture_t *pic)
 {
     (void)dec;
@@ -703,6 +793,15 @@ struct input_decoder_scenario input_decoder_scenarios[] =
     .display_prepare = display_prepare_noop,
     .player_setup_before_start = player_setup_paused_seek,
     .interface_setup = interface_setup_paused_seek,
+},
+{
+    .name = "resume unblocks a decoder waiting for paused output pictures",
+    .source = "mock://video_track_count=1;length=180000000;video_width=800;video_height=600",
+    .decoder_setup = decoder_i420_800_600_update,
+    .decoder_decode = decoder_decode_paused_resume,
+    .display_prepare = display_prepare_paused_resume,
+    .player_setup_before_start = player_setup_paused_resume,
+    .interface_setup = interface_setup_paused_resume,
 },
 {
     .name = "decoder is flushed",

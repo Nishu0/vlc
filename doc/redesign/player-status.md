@@ -201,3 +201,19 @@ for pictures held by the paused output before it processes the unpause command.
 That issue is still under investigation. Subtitle size was seen at 150%, but
 live redraw of an already rendered paused cue also needs further work. This
 follow-up does not declare the player acceptance gate complete.
+
+The separate allocation-pacing stall is now corrected: a video unpause updates
+the paused output immediately, allowing it to release pictures while the
+asynchronous decoder is still waiting for an allocation slot. The decoder
+thread retains responsibility for reporting its updated output pause date.
+A second deterministic regression reproduces the blocked-allocation cycle and
+fails against the preserved pre-fix core. All 15 decoder scenarios pass with
+the correction. The test queues its next picture beyond the late-frame drop
+threshold so that it measures resume rather than scheduling jitter.
+
+Running-app checks with the hardware-decoded MKV confirmed that video moves and
+subtitles render after a paused seek to 10:02 followed by Play. The same caption
+was visually compared at 100% and 150% and rendered larger at 150%; another pause
+retained the correct frame. Repeated paused seeks to 10:00, 19:05 and 57:15
+retained the input. Immediate resizing of an already cached paused cue remains
+a separate redraw detail; the size binding and resumed rendering are verified.
