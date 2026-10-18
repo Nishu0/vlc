@@ -32,3 +32,22 @@ choosing a distinct executable name.
 widths, Continue/Dismiss dispatch and one-shot completion. It does not resume
 actual media; that is covered by running-app acceptance of the controller path.
 Compile it in the same way, using its source and a distinct executable name.
+
+`window-commands.m` checks that window commands run serially on held video
+outputs while leaving the main queue available for synchronous output setup.
+This models the fullscreen-restoration lock cycle without opening playback.
+It links the core and loads the GUI module from the same build tree to avoid
+loading two copies of the Objective-C classes:
+
+```sh
+clang -fobjc-arc -std=gnu11 -Wall -Wextra -DHAVE_CONFIG_H \
+    -Ibuild-macos-baseline -Iinclude -I. -framework Cocoa \
+    test/modules/gui/macosx/window-commands.m \
+    -Lbuild-macos-baseline/src/.libs -Lbuild-macos-baseline/lib/.libs -lvlc -lvlccore \
+    -Wl,-rpath,"$PWD/build-macos-baseline/src/.libs" \
+    -Wl,-rpath,"$PWD/build-macos-baseline/lib/.libs" \
+    -Wl,-rpath,"$PWD/build-macos-baseline/VLC-dev.app/Contents/Frameworks" \
+    -o /tmp/vlc-window-commands-test
+VLC_PLUGIN_PATH="$PWD/build-macos-baseline/modules" /tmp/vlc-window-commands-test \
+    "$PWD/build-macos-baseline/modules/.libs/libmacosx_plugin.dylib"
+```

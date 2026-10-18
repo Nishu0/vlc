@@ -217,3 +217,13 @@ was visually compared at 100% and 150% and rendered larger at 150%; another paus
 retained the correct frame. Repeated paused seeks to 10:00, 19:05 and 57:15
 retained the input. Immediate resizing of an already cached paused cue remains
 a separate redraw detail; the size binding and resumed rendering are verified.
+
+Restarting from a saved native fullscreen window reproduced a main-thread
+deadlock: restoration tried to set the output's fullscreen variable while the
+decoder held its window lock and waited synchronously for AppKit setup. Window
+commands now run on a serial worker queue with held output references. The
+controller still reports its requested state on the main thread. Native-window
+fullscreen and float-on-top updates use the same queue to preserve order.
+The command-queue regression passes with a simulated synchronous AppKit setup;
+the previously hanging saved fullscreen state now restores with visible video.
+Fullscreen entry and Escape exit were also checked in the running QA app.

@@ -816,6 +816,14 @@ extern const CGFloat VLCVolumeDefault;
 #pragma mark - video output properties
 
 /**
+ * Enqueue a window command on the serial video-output command queue.
+ * Commands must not use AppKit. The output is held until the command finishes.
+ * This keeps the main thread available when output initialization needs it.
+ */
+- (void)enqueueVideoOutputCommand:(void (^)(vout_thread_t *))command
+                  forVideoOutput:(vout_thread_t *)vout;
+
+/**
  * the main video output thread
  * @warning the returned vout_thread_t * must be released with vout_Release().
  * @note listen to VLCPlayerListOfVideoOutputThreadsChanged to be notified about changes

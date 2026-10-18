@@ -1895,12 +1895,36 @@ static int BossCallback(vlc_object_t *p_this,
 {
     // Set the ivar first and then we will receive whatever has been enabled via fullscreenChanged
     [self fullscreenChanged:fullscreen];
-    vlc_player_vout_SetFullscreen(_p_player, fullscreen);
+    vout_thread_t *vout = self.mainVideoOutputThread;
+    if (vout) {
+        [self enqueueVideoOutputCommand:^(vout_thread_t *output) {
+            var_SetBool(output, "fullscreen", fullscreen);
+        } forVideoOutput:vout];
+        vout_Release(vout);
+    }
 }
 
 - (void)toggleFullscreen
 {
-    vlc_player_vout_SetFullscreen(_p_player, !_fullscreen);
+    self.fullscreen = !_fullscreen;
+}
+
+- (void)enqueueVideoOutputCommand:(void (^)(vout_thread_t *))command
+                  forVideoOutput:(vout_thread_t *)vout
+{
+    static dispatch_queue_t queue;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        queue = dispatch_queue_create("org.videolan.vlc.window-commands", DISPATCH_QUEUE_SERIAL);
+    });
+    vout_Hold(vout);
+    dispatch_async(queue, ^{
+        /* Enabling an output holds its window lock while synchronously
+         * creating AppKit views. Never wait for that lock on the main thread,
+         * including during native fullscreen restoration. */
+        command(vout);
+        vout_Release(vout);
+    });
 }
 
 - (void)togglePictureInPicture

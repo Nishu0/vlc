@@ -271,8 +271,10 @@ NSString *VLCWindowShouldShowController = @"VLCWindowShouldShowController";
         vout_thread_t *p_vout = [_playerController videoOutputThreadForKeyWindow];
         if (p_vout) {
             _wasFloatOnTopBeforeFullscreen = var_GetBool(p_vout, "video-on-top");
-            var_SetBool(p_vout, "video-on-top", false);
-            var_SetBool(p_vout, "fullscreen", true);
+            [_playerController enqueueVideoOutputCommand:^(vout_thread_t *output) {
+                var_SetBool(output, "video-on-top", false);
+                var_SetBool(output, "fullscreen", true);
+            } forVideoOutput:p_vout];
             vout_Release(p_vout);
         }
     }
@@ -312,10 +314,12 @@ NSString *VLCWindowShouldShowController = @"VLCWindowShouldShowController";
 
         vout_thread_t *p_vout = [_playerController videoOutputThreadForKeyWindow];
         if (p_vout) {
-            var_SetBool(p_vout, "fullscreen", false);
-            if (_wasFloatOnTopBeforeFullscreen) {
-                var_SetBool(p_vout, "video-on-top", true);
-            }
+            BOOL restoreFloatOnTop = _wasFloatOnTopBeforeFullscreen;
+            [_playerController enqueueVideoOutputCommand:^(vout_thread_t *output) {
+                var_SetBool(output, "fullscreen", false);
+                if (restoreFloatOnTop)
+                    var_SetBool(output, "video-on-top", true);
+            } forVideoOutput:p_vout];
             vout_Release(p_vout);
         }
     }
