@@ -59,9 +59,27 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 @interface PIPVoutViewController : NSViewController
 @property (nonatomic) NSRect previousBounds;
 @property (nonatomic, copy) void (^boundsChangeHandler)(void);
+@property (readonly) NSView *videoView;
+- (instancetype)initWithVideoView:(NSView *)videoView;
 @end
 
 @implementation PIPVoutViewController
+
+- (instancetype)initWithVideoView:(NSView *)videoView
+{
+    self = [super init];
+    if (!self)
+        return nil;
+    _videoView = videoView;
+    /* Keep PiP's appearance/layout callbacks on a container that is never
+     * transferred to the main player. */
+    self.view = [[NSView alloc] initWithFrame:videoView.bounds];
+    videoView.translatesAutoresizingMaskIntoConstraints = YES;
+    videoView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    videoView.frame = self.view.bounds;
+    [self.view addSubview:videoView];
+    return self;
+}
 
 - (void)setView:(NSView *)view {
     [super setView:view];
@@ -116,6 +134,8 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 }
 
 @property NSWindow *retainedWindow;
+@property NSRect windowFrameBeforePiP;
+@property BOOL windowWasFullscreenBeforePiP;
 @property (readonly) BOOL classic;
 @property (readwrite) BOOL voutTaken;
 
@@ -707,12 +727,18 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
     }
 
     NSWindow * const window = self.view.window;
+    self.windowFrameBeforePiP = window.frame;
+    self.windowWasFullscreenBeforePiP = ((VLCWindow *)window).isInNativeFullscreen ||
+                                       ((VLCWindow *)window).fullscreen;
     [window orderOut:window];
     self.retainedWindow = window;
 
-    _voutViewController = [PIPVoutViewController new];
-    _voutViewController.view = [self acquireVideoView];
-    NSAssert(_voutViewController.view != nil, @"Vout view should not be nil");
+    NSView * const videoView = [self acquireVideoView];
+    NSAssert(videoView != nil, @"Vout view should not be nil");
+    /* The PiP controller owns its container, not the transferable video view.
+     * Its appearance callbacks can run after the video returns to the player;
+     * adding PiP fill constraints to that view would constrain the main window. */
+    _voutViewController = [[PIPVoutViewController alloc] initWithVideoView:videoView];
     VLCPlayerController * const controller = notification.object;
     _pipViewController.playing = controller.playerState == VLC_PLAYER_STATE_PLAYING;
     
@@ -740,7 +766,8 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
     void (^presentVcAsPip)(void) = ^() {
         typeof(self) strongSelf = weakSelf;
-        if (strongSelf && strongSelf->_voutViewController.presentingViewController == nil) {
+        if (strongSelf && strongSelf->_voutViewController &&
+            strongSelf->_voutViewController.presentingViewController == nil) {
             [strongSelf->_pipViewController presentViewControllerAsPictureInPicture:strongSelf->_voutViewController];
         }
     };
@@ -884,20 +911,31 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 
 - (void)pipWillClose:(PIPViewController *)pip
 {
+    _voutViewController.boundsChangeHandler = nil;
     NSWindow * const window = self.retainedWindow;
-    pip.replacementWindow = window;
-    pip.replacementRect = self.view.frame;
     if ([window isKindOfClass:VLCLibraryWindow.class]) {
         [(VLCLibraryWindow *)window enableVideoPlaybackAppearance];
     }
+    [self restorePiPWindowFrame];
+    [window.contentView layoutSubtreeIfNeeded];
+    pip.replacementWindow = window;
+    pip.replacementRect = [self.view convertRect:self.view.bounds toView:nil];
     [window makeKeyAndOrderFront:window];
-    self.retainedWindow = nil;
 }
 
 - (void)pipDidClose:(PIPViewController *)pip
 {
-    [self returnVideoView:_voutViewController.view];
+    [self returnVideoView:_voutViewController.videoView];
     _voutViewController = nil;
+    [self restorePiPWindowFrame];
+    self.retainedWindow = nil;
+}
+
+- (void)restorePiPWindowFrame
+{
+    VLCWindow * const window = (VLCWindow *)self.retainedWindow;
+    if (!self.windowWasFullscreenBeforePiP && !window.isInNativeFullscreen && !window.fullscreen)
+        [window setFrame:self.windowFrameBeforePiP display:YES];
 }
 
 - (void)pipActionPlay:(PIPViewController *)pip

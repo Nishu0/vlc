@@ -21,6 +21,12 @@ clang -fobjc-arc -Wall -Wextra -framework Cocoa \
 The executable and app must have matching architectures. This standalone check
 is not currently integrated into the cross-platform test runner.
 
+`pip-container.m` checks the actual PiP container class without starting playback.
+After moving its video view back to a native player host, a late PiP appearance
+callback must not add constraints to that host or change its geometry. Compile
+it like `file-drop.m`, with its own executable name. Running-app checks cover the
+system PiP presentation, controls and return animation separately.
+
 `inspector.m` checks numeric text entry, range validation, keyboard-editable and
 centered fields, disabled controls, timer expiration/cancellation/replacement,
 wake checks and timer ownership. It loads the actual inspector classes but uses

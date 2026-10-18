@@ -169,7 +169,7 @@ maintainer review.
 - Remaining inspector workflows: cue timeline/waveform, scoped presets, exact font controls, richer color editing, full inline filter parameters and output capabilities.
 - Resume-prompt resizing at the smallest window sizes after the timestamp-readability correction. Continue, Dismiss, Escape, timeout and media-change cancellation passed; paused-long-seek/resume and resumed caption sizing now pass.
 - Immediate style redraw of an already rendered paused subtitle cue.
-- Remaining fullscreen edge-hover, keyboard focus, PiP return, and small-window checks.
+- Remaining physical fullscreen edge-hover, keyboard focus, fullscreen PiP, and small-window checks. Windowed PiP presentation, controls and return now pass.
 - Full player acceptance against the video interaction map, including unsupported/live input states.
 
 The full native package at `a835ba0a9e` was staged outside the working build copy and launched with the supplied local MKV. Video and English subtitles rendered, and all 19 embedded subtitle rows populated. The app and disk image passed signature/checksum verification; paths and hashes are in [build status](build-status.md).
@@ -273,3 +273,18 @@ queue after returning through the live artwork button. Classic mode keeps its
 existing sidebar route. PiP video and native Pause were observed through macOS's
 PIPAgent window; returning exposed a window-sizing defect that remains under
 investigation at this point.
+
+The PiP return defect is corrected. A late `PIPVoutViewController` appearance
+callback added fill constraints to the already-returned video view, mixing its
+PiP layout with the player's manual layout and collapsing the window to a title
+strip. PiP now owns a separate container around the transferable video. Closing
+clears its pending presentation callback, and the original windowed frame is
+restored around library/sidebar transitions. Native fullscreen frames are left
+to the window system.
+
+Four container regressions pass, including the late appearance callback after
+reparenting. Native PiP showed the generated video's real 1:30 frame; Play
+advanced its timecode and Pause stopped it. Restore returned the matching frame
+and original 792 × 327-point window. A second round trip using Close retained
+the same window, paused frame and transport. This verifies windowed PiP; native
+fullscreen PiP still has its separate acceptance case.
