@@ -51,3 +51,30 @@ clang -fobjc-arc -std=gnu11 -Wall -Wextra -DHAVE_CONFIG_H \
 VLC_PLUGIN_PATH="$PWD/build-macos-baseline/modules" /tmp/vlc-window-commands-test \
     "$PWD/build-macos-baseline/modules/.libs/libmacosx_plugin.dylib"
 ```
+
+`fullscreen-controls.m` loads the actual chrome visibility method with native
+window geometry, a fake player state and an injected pointer source. It checks
+both edges, leaving the window, windowed mode and four open-panel cases. Compile
+like `resume-prompt.m`. It does not claim physical pointer acceptance.
+
+`seek-preview.m` links the production preview, appearance and aligned-label
+objects. It supplies a real thumbnail preparser without starting the GUI or a
+playing input. Use a video longer than 80 seconds with visibly changing frames.
+Checks cover distinct requested frames, timestamp text, cache reuse, stale
+completion, cancellation, temporary-file cleanup and owner teardown.
+
+```sh
+vlc_test_objects="$PWD/build-macos-baseline/modules/gui/macosx/redesign/.libs"
+clang -fobjc-arc -std=gnu11 -Wall -Wextra -DHAVE_CONFIG_H \
+    -Ibuild-macos-baseline -Iinclude -I. -Imodules/gui/macosx \
+    -framework Cocoa -framework CoreText test/modules/gui/macosx/seek-preview.m \
+    "$vlc_test_objects/libmacosx_plugin_la-VLCRedesignSeekPreview.o" \
+    "$vlc_test_objects/libmacosx_plugin_la-VLCRedesignAppearance.o" \
+    "$vlc_test_objects/libmacosx_plugin_la-VLCRedesignTextLayout.o" \
+    -Lbuild-macos-baseline/src/.libs -Lbuild-macos-baseline/lib/.libs -lvlc -lvlccore \
+    -Wl,-rpath,"$PWD/build-macos-baseline/src/.libs" \
+    -Wl,-rpath,"$PWD/build-macos-baseline/lib/.libs" \
+    -o /tmp/vlc-seek-preview-test
+VLC_PLUGIN_PATH="$PWD/build-macos-baseline/modules" /tmp/vlc-seek-preview-test \
+    /absolute/path/to/test-video.mkv
+```

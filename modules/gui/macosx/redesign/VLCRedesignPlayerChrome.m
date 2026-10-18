@@ -13,6 +13,7 @@
 #import "VLCRedesignCompactBrowser.h"
 #import "VLCRedesignInspector.h"
 #import "VLCRedesignResumePrompt.h"
+#import "VLCRedesignSeekPreview.h"
 #import "library/VLCLibrarySegment.h"
 #import "library/media-source/VLCLibraryMediaSourceViewController.h"
 #import "library/media-source/VLCMediaSourceBaseDataSource.h"
@@ -217,6 +218,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
 @interface VLCPlayerSeekSlider : VLCPlaybackProgressSlider
 @property BOOL dragging;
 @property (copy) void (^didFinishSeeking)(void);
+@property (copy) void (^hoverChanged)(BOOL visible, double position);
+@property NSTrackingArea *hoverTrackingArea;
 @end
 @implementation VLCPlayerSeekSlider
 
@@ -257,6 +260,37 @@ static NSImage *VLCPlayerAsset(NSString *role)
 - (NSSize)intrinsicContentSize
 {
     return NSMakeSize(NSViewNoIntrinsicMetric, 28);
+}
+
+- (void)updateTrackingAreas
+{
+    if (_hoverTrackingArea)
+        [self removeTrackingArea:_hoverTrackingArea];
+    _hoverTrackingArea = [[NSTrackingArea alloc] initWithRect:NSZeroRect
+        options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved |
+                NSTrackingActiveInKeyWindow | NSTrackingInVisibleRect
+        owner:self userInfo:nil];
+    [self addTrackingArea:_hoverTrackingArea];
+    [super updateTrackingAreas];
+}
+
+- (void)mouseMoved:(NSEvent *)event
+{
+    NSPoint point = [self convertPoint:event.locationInWindow fromView:nil];
+    double position = (point.x - 6) / MAX(1, NSWidth(self.bounds) - 12);
+    if (self.hoverChanged)
+        self.hoverChanged(YES, MAX(0, MIN(1, position)));
+}
+
+- (void)mouseEntered:(NSEvent *)event
+{
+    [self mouseMoved:event];
+}
+
+- (void)mouseExited:(NSEvent *)event
+{
+    if (self.hoverChanged)
+        self.hoverChanged(NO, 0);
 }
 
 - (void)mouseDown:(NSEvent *)event
@@ -408,6 +442,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
 @property VLCRedesignQueuePanel *queuePanel;
 @property VLCRedesignInspector *inspector;
 @property VLCRedesignResumePrompt *resumePrompt;
+@property VLCRedesignSeekPreview *seekPreview;
+@property double previewPosition;
 @property id panelEventMonitor;
 @end
 
@@ -494,6 +530,16 @@ static NSImage *VLCPlayerAsset(NSString *role)
         typeof(self) strongSelf = weakSelf;
         if (strongSelf && strongSelf.player.seekable)
             [strongSelf.player setPositionPrecise:strongSelf.seekSlider.floatValue];
+    };
+    _seekPreview = [[VLCRedesignSeekPreview alloc] init];
+    _seekPreview.layer.zPosition = 1;
+    [self addSubview:_seekPreview];
+    _seekSlider.hoverChanged = ^(BOOL visible, double position) {
+        typeof(self) strongSelf = weakSelf;
+        if (visible)
+            [strongSelf showSeekPreviewAtPosition:position];
+        else
+            [strongSelf.seekPreview cancel];
     };
     _volumeSlider = [[VLCPlayerVolumeSlider alloc] initWithFrame:NSZeroRect];
     _volumeSlider.minValue = 0;
@@ -668,6 +714,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
         CGFloat promptWidth = MIN(550, MAX(0, width - 40));
         _resumePrompt.frame = NSMakeRect((width - promptWidth) / 2, MAX(40, height - barHeight - 72), promptWidth, 52);
     }
+    if (!_seekPreview.hidden)
+        [self layoutSeekPreview];
     _bottomBar.needsDisplay = YES;
     for (NSView *control in _bottomBar.subviews)
         control.needsDisplay = YES;
@@ -676,7 +724,34 @@ static NSImage *VLCPlayerAsset(NSString *role)
 
 - (void)playerChanged:(NSNotification *)notification
 {
+    if ([notification.name isEqualToString:VLCPlayerCurrentMediaItemChanged] ||
+        [notification.name isEqualToString:VLCPlayerFullscreenChanged])
+        [_seekPreview cancel];
     [self updatePlayer];
+}
+
+- (void)layoutSeekPreview
+{
+    NSRect slider = [_seekSlider convertRect:_seekSlider.bounds toView:self];
+    CGFloat width = MIN(200, MAX(0, NSWidth(self.bounds) - 20));
+    CGFloat x = NSMinX(slider) + _previewPosition * NSWidth(slider) - width / 2;
+    x = MAX(10, MIN(NSWidth(self.bounds) - width - 10, x));
+    _seekPreview.frame = NSMakeRect(x, MAX(40, NSMinY(slider) - 150), width, 140);
+}
+
+- (void)showSeekPreviewAtPosition:(double)position
+{
+    VLCPlayerController *player = self.player;
+    VLCInputItem *item = player.currentMedia;
+    if (!item || !player.seekable || player.length <= 0 || player.currentMediaIsAudioOnly ||
+        !player.URLOfCurrentMediaItem.isFileURL || _resumePrompt) {
+        [_seekPreview cancel];
+        return;
+    }
+    _previewPosition = MAX(0, MIN(1, position));
+    vlc_tick_t time = MIN(player.length - 1, (vlc_tick_t)(player.length * _previewPosition));
+    [_seekPreview showInputItem:item atTime:time];
+    [self layoutSeekPreview];
 }
 
 - (void)timeChanged:(NSNotification *)notification
@@ -774,6 +849,8 @@ static NSImage *VLCPlayerAsset(NSString *role)
     _bottomBar.hidden = fullscreen && !browserSelected && !self.menuOpen && !self.trackPanel && !self.queuePanel &&
                         !self.inspector && !self.resumePrompt &&
                         !(inside && point.y > NSHeight(self.bounds) - NSHeight(_bottomBar.frame) - 16);
+    if (_bottomBar.hidden)
+        [_seekPreview cancel];
 }
 
 #pragma mark - Real player and window actions
@@ -797,9 +874,10 @@ static NSImage *VLCPlayerAsset(NSString *role)
 {
     if (!self.player.seekable)
         return;
-    if (_seekSlider.dragging)
+    if (_seekSlider.dragging) {
         [self.player setPositionFast:sender.floatValue];
-    else
+        [self showSeekPreviewAtPosition:sender.floatValue];
+    } else
         [self.player setPositionPrecise:sender.floatValue];
 }
 

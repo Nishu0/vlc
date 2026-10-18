@@ -10,7 +10,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface VLCRedesignResumePrompt : NSView
 - (instancetype)initWithPosition:(NSInteger)seconds choice:(void (^)(BOOL continuePlayback))choice;
-- (void)dismiss:(id)sender;
+- (void)dismiss:(nullable id)sender;
 @end
 
 NS_ASSUME_NONNULL_END

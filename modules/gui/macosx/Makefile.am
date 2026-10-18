@@ -108,6 +108,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignPlayerChrome.m \
 	gui/macosx/redesign/VLCRedesignResumePrompt.h \
 	gui/macosx/redesign/VLCRedesignResumePrompt.m \
+	gui/macosx/redesign/VLCRedesignSeekPreview.h \
+	gui/macosx/redesign/VLCRedesignSeekPreview.m \
 	gui/macosx/redesign/VLCRedesignInspector.h \
 	gui/macosx/redesign/VLCRedesignInspector.m \
 	gui/macosx/redesign/VLCRedesignTrackPanel.h \

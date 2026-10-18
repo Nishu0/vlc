@@ -1,6 +1,6 @@
 # Native Mac player redesign
 
-The main player is being implemented around VLC's existing native video output and player/queue controllers. The chrome, direct track/device selectors, Queue / Bookmarks / Chapters panel, compact browser, and the first four-tab inspector slice are implemented. A video-led resume notification is also implemented with native component checks; its running-app acceptance is pending an unlocked desktop. Hover thumbnails and the deeper inspector workflows remain parts of the main-player request.
+The main player uses VLC's existing native video output and player/queue controllers. The chrome, direct track/device selectors, Queue / Bookmarks / Chapters panel, compact browser, seek thumbnails, resume notification and the first four-tab inspector slice are implemented. The October 18 follow-up below records new playback fixes and acceptance results. Deeper inspector workflows and the remaining interaction checks are still part of the main-player request.
 
 ## Shell and transport
 
@@ -167,8 +167,8 @@ maintainer review.
 
 - Remaining external file/library drop acceptance checks.
 - Remaining inspector workflows: cue timeline/waveform, scoped presets, exact font controls, richer color editing, full inline filter parameters and output capabilities.
-- Running-app acceptance of the new resume prompt, plus the unresolved paused-long-seek/caption-size check.
-- Hover thumbnails generated for the hovered time, independent of the playing input.
+- Resume-prompt resize and media-change cancellation acceptance. Continue, Dismiss, Escape and timeout passed; paused-long-seek/resume and resumed caption sizing now pass.
+- Immediate style redraw of an already rendered paused subtitle cue.
 - Remaining fullscreen edge-hover, keyboard focus, PiP return, and small-window checks.
 - Full player acceptance against the video interaction map, including unsupported/live input states.
 
@@ -227,3 +227,24 @@ fullscreen and float-on-top updates use the same queue to preserve order.
 The command-queue regression passes with a simulated synchronous AppKit setup;
 the previously hanging saved fullscreen state now restores with visible video.
 Fullscreen entry and Escape exit were also checked in the running QA app.
+
+Seek thumbnails follow the video's 03:31 layout: a rounded video preview with a
+centered timestamp above the seek bar. A separate VLC thumbnail request decodes
+the hovered time without seeking the playing input. Requests debounce for 180ms,
+cancel on superseding times or media changes, and use a 48-entry / 8MiB memory
+cache. Temporary PNG files use unique paths, mode 0600, and are read before
+removal. Main-queue completion owns handle release so cancellation cannot race
+the thumbnail callback. Unsupported, live, audio-only and non-local inputs do
+not show a video preview. Hidden transport, fullscreen transitions and window
+detachment cancel the popup.
+
+Twelve native checks passed against real VLC thumbnail decoding, including
+different images at 10 and 80 seconds, cache reuse, input invalidation, stale
+completion, cancellation and owner teardown. Running-app review showed the
+generated source's actual timecode inside the preview, with playback paused at
+0:18 while the hovered preview remained at 1:24. The image and timestamp were
+visually checked above the seek bar. Nine native geometry checks pass for
+fullscreen top/bottom edges, leaving the window, open panels and windowed mode.
+The computer-use tool's fullscreen coordinate clicks did not move the physical
+pointer reported by AppKit; physical edge-hover acceptance remains separate
+from those component checks.
