@@ -57,6 +57,17 @@ static NSImage *VLCBrowserTinted(NSImage *image, NSColor *color)
                    }];
 }
 
+/* Artist of a song: album tracks know theirs, other audio carries it in its metadata. */
+static NSString *VLCBrowserArtist(VLCMediaLibraryMediaItem *media)
+{
+    if (media.mediaType != VLC_ML_MEDIA_TYPE_AUDIO)
+        return nil;
+    if (media.mediaSubType == VLC_ML_MEDIA_SUBTYPE_ALBUMTRACK && media.primaryDetailString.length)
+        return media.primaryDetailString;
+    NSString *artist = media.inputItem.artist;
+    return artist.length ? artist : nil;
+}
+
 static void VLCBrowserDrawGridIcon(NSRect rect)
 {
     [VLCRedesignAppearance.subduedColor setStroke];
@@ -1311,6 +1322,12 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         if (media) {
             entry[@"played"] = @(media.playCount);
             entry[@"progress"] = @(media.progress);
+            NSString *artist = VLCBrowserArtist(media);
+            if (artist) {
+                entry[@"artist"] = artist;
+                if (media.title.length)
+                    entry[@"name"] = media.title;
+            }
         }
     }
     return entry;
@@ -1326,6 +1343,9 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
             entry[@"url"] = url;
         entry[@"played"] = @(media.playCount);
         entry[@"progress"] = @(media.progress);
+        NSString *artist = VLCBrowserArtist(media);
+        if (artist)
+            entry[@"artist"] = artist;
         if (url.isFileURL) {
             NSDate *modified;
             [url getResourceValue:&modified forKey:NSURLContentModificationDateKey error:nil];
@@ -1505,7 +1525,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     for (VLCMediaLibraryMediaItem *media in snapshot[1]) {
         NSMutableDictionary *entry = [[self entryForLibraryItem:media kind:@"media"] mutableCopy];
         entry[@"section"] = @"listen";
-        entry[@"subtitle"] = media.primaryDetailString ?: @"";
+        entry[@"subtitle"] = entry[@"artist"] ?: @"";
         [rows addObject:entry];
         if (++count == 12)
             break;
@@ -2119,8 +2139,10 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     NSURL *url = entry[@"url"];
     cell.representedURL = url;
     cell.representedEntry = entry;
-    cell.textField.stringValue = entry[@"name"];
-    cell.textField.toolTip = entry[@"name"];
+    NSString *label = entry[@"artist"] ? [NSString stringWithFormat:@"%@ - %@", entry[@"name"], entry[@"artist"]]
+                                       : entry[@"name"];
+    cell.textField.stringValue = label;
+    cell.textField.toolTip = label;
     __weak VLCBrowserCell *weakCell = cell;
     [self configureArtwork:cell.artwork
                      entry:entry
@@ -2454,6 +2476,29 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     }
 }
 
+/* Height of the flow layout's content, computed from the same sizes and insets it
+ * uses: forcing the collection view to lay out here can re-enter AppKit layout. */
+- (CGFloat)gridContentHeightForWidth:(CGFloat)width
+{
+    CGFloat height = 0;
+    for (NSInteger section = 0; section < (NSInteger)_sectionStarts.count; section++) {
+        NSInteger count = [self countForSection:section];
+        NSEdgeInsets insets = [self collectionView:_grid layout:_gridLayout insetForSectionAtIndex:section];
+        height += [self collectionView:_grid layout:_gridLayout referenceSizeForHeaderInSection:section].height;
+        height += insets.top + insets.bottom;
+        if (count == 0)
+            continue;
+        NSSize item = [self collectionView:_grid
+                                    layout:_gridLayout
+                    sizeForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
+        NSInteger columns = MAX(1, (NSInteger)floor((width + _gridLayout.minimumInteritemSpacing) /
+                                                    (item.width + _gridLayout.minimumInteritemSpacing)));
+        NSInteger rows = (count + columns - 1) / columns;
+        height += rows * item.height + (rows - 1) * _gridLayout.minimumLineSpacing;
+    }
+    return ceil(height);
+}
+
 /* Figma 970:4028 at 1920 pt: a 217 pt sidebar column holding an inset card,
  * then a 20 pt padded content area. Narrow windows keep an icon-only sidebar. */
 - (void)layoutFullLibrary
@@ -2497,11 +2542,8 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     _gridLayout.minimumLineSpacing = 40;
     _gridLayout.itemSize =
         NSMakeSize(itemWidth, floor(itemWidth * 9. / 16.) + VLCBrowserTileCaptionGap + VLCBrowserTileLineHeight);
-    /* Sections have varying tile sizes, so measure the laid-out content at this width */
-    [_grid setFrameSize:NSMakeSize(bodyWidth, NSHeight(_grid.frame))];
     [_gridLayout invalidateLayout];
-    [_grid layoutSubtreeIfNeeded];
-    [_grid setFrameSize:NSMakeSize(bodyWidth, MAX(_gridLayout.collectionViewContentSize.height,
+    [_grid setFrameSize:NSMakeSize(bodyWidth, MAX([self gridContentHeightForWidth:bodyWidth],
                                                   NSHeight(_scroll.contentView.bounds)))];
     _table.frame = NSMakeRect(0, 0, bodyWidth, MAX(NSHeight(_scroll.contentView.bounds), _entries.count * 42));
     _table.tableColumns.firstObject.width = bodyWidth;

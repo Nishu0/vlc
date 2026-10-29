@@ -87,7 +87,12 @@
 
     self.splitViewItems = @[_navSidebarItem, _libraryTargetViewItem, self.multifunctionSidebarItem];
 
-    VLCMainWindowControlsBar * const controlsBar = libraryWindow.controlsBar;
+    [self attachControlsBar];
+}
+
+- (void)attachControlsBar
+{
+    VLCMainWindowControlsBar * const controlsBar = self.libraryWindow.controlsBar;
     VLCBottomBarView * const bottomBarView = controlsBar.bottomBarView;
     bottomBarView.translatesAutoresizingMaskIntoConstraints = NO;
     [NSLayoutConstraint activateConstraints:@[

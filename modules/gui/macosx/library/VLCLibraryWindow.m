@@ -118,6 +118,7 @@ NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey = @"embeddedVide
     NSInteger _currentSelectedViewModeSegment;
     VLCVideoWindowCommon *_temporaryAudioDecorativeWindow;
     NSView *_acquiredVideoView;
+    NSSplitView *_classicSplitView;
 }
 
 @property NSTimer *searchInputTimer;
@@ -212,7 +213,11 @@ static int ShowController(vlc_object_t * __unused p_this,
     [self setupLoadingOverlayView];
 
     self.librarySearchField.delegate = self;
-    [self presentRedesignedLibrary];
+    // After the nib finishes loading: the split view controller still attaches its views
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!self.embeddedVideoPlaybackActive)
+            [self presentRedesignedLibrary];
+    });
 }
 
 - (void)presentRedesignedLibrary
@@ -230,6 +235,14 @@ static int ShowController(vlc_object_t * __unused p_this,
     }
     _redesignedLibraryView.hidden = NO;
 
+    /* The classic library's constraints loop in small windows once it lists
+     * media, which AppKit turns into a crash (also seen in the unchanged
+     * 4.0-dev build). Nothing of it shows behind the redesigned library, so
+     * take it out of the window until video or a classic screen needs it. */
+    if (!_classicSplitView)
+        _classicSplitView = self.mainSplitView;
+    [_classicSplitView removeFromSuperview];
+
     // The redesigned library draws its own title bar and window controls
     self.toolbar.visible = NO;
     self.titlebarAppearsTransparent = YES;
@@ -238,11 +251,23 @@ static int ShowController(vlc_object_t * __unused p_this,
         [self standardWindowButton:button.integerValue].hidden = YES;
 }
 
+- (void)restoreClassicSplitView
+{
+    if (!_classicSplitView || _classicSplitView.superview)
+        return;
+    NSView * const contentView = self.contentView;
+    [contentView addSubview:_classicSplitView positioned:NSWindowBelow relativeTo:contentView.subviews.firstObject];
+    _classicSplitView.translatesAutoresizingMaskIntoConstraints = NO;
+    [_classicSplitView applyConstraintsToFillSuperview];
+    [self.splitViewController attachControlsBar];
+}
+
 - (void)presentClassicLibrary
 {
     if (!_redesignedLibraryView || _redesignedLibraryView.hidden)
         return;
     _redesignedLibraryView.hidden = YES;
+    [self restoreClassicSplitView];
     if (self.embeddedVideoPlaybackActive)
         return;
     self.toolbar.visible = YES;
@@ -708,6 +733,7 @@ static int ShowController(vlc_object_t * __unused p_this,
     }
 
     _redesignedLibraryView.hidden = YES;
+    [self restoreClassicSplitView];
     [self presentVideoView];
     [self enableVideoTitleBarMode];
     [self hideControlsBarImmediately];

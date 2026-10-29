@@ -342,7 +342,8 @@ NSString * const VLCUseClassicVideoPlayerLayoutKey = @"VLCUseClassicVideoPlayerL
 {
     const BOOL isAudioOnly = controller.currentMediaIsAudioOnly;
     const BOOL isVisualActive = [self isVisualizationActive];
-    const BOOL decorativeViewVisible = isAudioOnly && !isVisualActive;
+    // The redesigned player draws its own music presentation
+    const BOOL decorativeViewVisible = isAudioOnly && !isVisualActive && !_redesignedPlayer;
 
     // Keep voutView mounted so the macOS vout module always finds an in-window
     // NSView when WindowEnable runs. Otherwise an audio item that later exposes

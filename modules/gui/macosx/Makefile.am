@@ -79,6 +79,7 @@ libmacosx_plugin_la_LDFLAGS = $(AM_LDFLAGS) $(gui_RPATH) \
 	-Wl,-framework,AVFoundation \
 	-Wl,-framework,Cocoa \
 	-Wl,-framework,CoreAudio \
+	-Wl,-framework,CoreMedia \
 	-Wl,-framework,CoreText \
 	-Wl,-framework,CoreGraphics \
 	-Wl,-framework,CoreVideo \
@@ -128,6 +129,10 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignLibraryView.m \
 	gui/macosx/redesign/VLCRedesignMiniPlayer.h \
 	gui/macosx/redesign/VLCRedesignMiniPlayer.m \
+	gui/macosx/redesign/VLCRedesignMusicView.h \
+	gui/macosx/redesign/VLCRedesignMusicView.m \
+	gui/macosx/redesign/VLCRedesignWaveform.h \
+	gui/macosx/redesign/VLCRedesignWaveform.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \

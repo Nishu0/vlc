@@ -8,6 +8,8 @@
 #import "VLCRedesignAppearance.h"
 #import "VLCRedesignIconButton.h"
 #import "VLCRedesignLibraryView.h"
+#import "VLCRedesignMusicView.h"
+#import "VLCRedesignWaveform.h"
 #import "VLCRedesignPanelButton.h"
 #import "VLCRedesignTextLayout.h"
 #import "VLCRedesignTrackPanel.h"
@@ -34,6 +36,45 @@
 #import "windows/video/VLCMainVideoViewController.h"
 #import "windows/video/VLCVideoWindowCommon.h"
 #import "windows/video/VLCVideoOutputProvider.h"
+
+/* "Skip by N seconds" icon from Figma (backward-15-sec / forward-15-sec), labelled
+ * with VLC's configured short jump length instead of a fixed 15. */
+static NSImage *VLCPlayerSkipImage(BOOL forward, int64_t seconds)
+{
+    return [NSImage imageWithSize:NSMakeSize(24, 24)
+                          flipped:YES
+                   drawingHandler:^BOOL(NSRect rect) {
+                       NSAffineTransform *mirror = [NSAffineTransform transform];
+                       if (!forward) {
+                           [mirror translateXBy:24 yBy:0];
+                           [mirror scaleXBy:-1 yBy:1];
+                       }
+                       NSBezierPath *arc = [NSBezierPath bezierPath];
+                       [arc moveToPoint:NSMakePoint(4, 10)];
+                       [arc curveToPoint:NSMakePoint(11.7, 4) controlPoint1:NSMakePoint(4.43, 8)
+                           controlPoint2:NSMakePoint(6.57, 4)];
+                       [arc curveToPoint:NSMakePoint(19.43, 10) controlPoint1:NSMakePoint(16.86, 4)
+                           controlPoint2:NSMakePoint(18.57, 8)];
+                       [arc moveToPoint:NSMakePoint(14.29, 8.5)];
+                       [arc lineToPoint:NSMakePoint(19.43, 10)];
+                       [arc lineToPoint:NSMakePoint(22, 6.5)];
+                       [arc transformUsingAffineTransform:mirror];
+                       arc.lineWidth = 1.5;
+                       arc.lineCapStyle = NSLineCapStyleRound;
+                       arc.lineJoinStyle = NSLineJoinStyleRound;
+                       [VLCRedesignAppearance.subduedColor setStroke];
+                       [arc stroke];
+                       NSAttributedString *label = [[NSAttributedString alloc]
+                           initWithString:[NSString stringWithFormat:@"%lld", seconds]
+                               attributes:@{
+                                   NSFontAttributeName : [VLCRedesignAppearance fontOfSize:10 weight:NSFontWeightMedium],
+                                   NSForegroundColorAttributeName : VLCRedesignAppearance.subduedColor
+                               }];
+                       CGFloat width = label.size.width;
+                       [label drawAtPoint:NSMakePoint(forward ? 6 : 18 - width, 10)];
+                       return YES;
+                   }];
+}
 
 @interface VLCPlayerBar : NSView
 @end
@@ -356,6 +397,11 @@
 @property VLCPlayerIconButton *previousButton;
 @property VLCPlayerIconButton *playButton;
 @property VLCPlayerIconButton *nextButton;
+@property VLCPlayerIconButton *skipBackButton;
+@property VLCPlayerIconButton *skipForwardButton;
+@property VLCRedesignWaveform *waveform;
+@property VLCRedesignMusicView *musicView;
+@property BOOL musicMode;
 @property VLCPlayerIconButton *menuButton;
 @property VLCPlayerIconButton *browserButton;
 @property VLCPlayerIconButton *folderButton;
@@ -443,6 +489,8 @@
     _playButton = [self button:@"play" label:_NS("Play") action:@selector(play:) parent:_bottomBar];
     _playButton.transport = YES;
     _nextButton = [self button:@"next" label:_NS("Next item") action:@selector(next:) parent:_bottomBar];
+    _skipBackButton = [self button:@"skip-back" label:@"" action:@selector(skipBack:) parent:_bottomBar];
+    _skipForwardButton = [self button:@"skip-forward" label:@"" action:@selector(skipForward:) parent:_bottomBar];
     _muteButton = [self button:@"speaker" label:_NS("Mute") action:@selector(mute:) parent:_bottomBar];
     _audioButton = [self button:@"audio"
                           label:_NS("Audio tracks and devices")
@@ -491,6 +539,18 @@
     _volumeSlider.action = @selector(volume:);
     _volumeSlider.accessibilityLabel = _NS("Volume");
     [_bottomBar addSubview:_seekSlider];
+    __weak typeof(self) weakChrome = self;
+    _waveform = [[VLCRedesignWaveform alloc] initWithFrame:NSZeroRect];
+    _waveform.seek = ^(double position, BOOL finished) {
+        VLCPlayerController *player = weakChrome.player;
+        if (!player.seekable)
+            return;
+        if (finished)
+            [player setPositionPrecise:position];
+        else
+            [player setPositionFast:position];
+    };
+    [_bottomBar addSubview:_waveform];
     [_bottomBar addSubview:_volumeSlider];
     NSNotificationCenter *center = NSNotificationCenter.defaultCenter;
     for (NSString *name in @[
@@ -610,9 +670,18 @@
         ((NSButton *)windowButtons[i]).frame = NSMakeRect(width - 150 + i * 36, 6, 36, 28);
     CGFloat pad = narrow ? 12 : 20, gap = narrow ? 12 : 20;
     CGFloat y = narrow ? 54 : 11;
+    /* Music adds skip buttons around play: previous, back, play, forward, next, 8 pt apart */
+    CGFloat transportWidth = _musicMode ? 206 : 130;
     _previousButton.frame = NSMakeRect(pad, y + 2, 30, 28);
-    _playButton.frame = NSMakeRect(pad + 38, y + 2, 54, 28);
-    _nextButton.frame = NSMakeRect(pad + 100, y + 2, 30, 28);
+    if (_musicMode) {
+        _skipBackButton.frame = NSMakeRect(pad + 38, y + 2, 30, 28);
+        _playButton.frame = NSMakeRect(pad + 76, y + 2, 54, 28);
+        _skipForwardButton.frame = NSMakeRect(pad + 138, y + 2, 30, 28);
+        _nextButton.frame = NSMakeRect(pad + 176, y + 2, 30, 28);
+    } else {
+        _playButton.frame = NSMakeRect(pad + 38, y + 2, 54, 28);
+        _nextButton.frame = NSMakeRect(pad + 100, y + 2, 30, 28);
+    }
     CGFloat right = width - pad;
     _queueButton.frame = NSMakeRect(right - 30, y, 30, 32);
     right -= 30 + gap;
@@ -626,7 +695,7 @@
     right -= 97;
     _muteButton.frame = NSMakeRect(right - 24, y + 4, 24, 24);
     right -= 24 + gap;
-    CGFloat seekStart = narrow ? pad : pad + 130 + gap;
+    CGFloat seekStart = narrow ? pad : pad + transportWidth + gap;
     CGFloat seekEnd = narrow ? width - pad : right;
     CGFloat seekY = narrow ? 12 : y + 2;
     CGFloat timeWidth = narrow ? 76 : 76;
@@ -634,6 +703,11 @@
     _durationButton.frame = NSMakeRect(seekEnd - timeWidth, seekY, timeWidth, 28);
     _seekSlider.frame =
         NSMakeRect(seekStart + timeWidth + 8, seekY, MAX(0, seekEnd - seekStart - 2 * timeWidth - 16), 28);
+    _waveform.frame = _seekSlider.frame;
+    /* Music fills the whole area between the bars, edge to edge, like Figma 4767:23726 */
+    _musicView.frame = fullscreen ? self.bounds
+                                  : NSMakeRect(browserWidth, 40, MAX(0, width - browserWidth),
+                                               MAX(0, height - 40 - barHeight));
     if (compact) {
         _queueButton.frame = NSMakeRect(width - pad - 30, 54, 30, 32);
         _settingsButton.frame = NSMakeRect(width - pad - 72, 54, 30, 32);
@@ -708,6 +782,7 @@
     VLCPlayerController *player = self.player;
     if (!_seekSlider.dragging)
         _seekSlider.doubleValue = MAX(0, MIN(1, player.position));
+    _waveform.position = player.position;
     vlc_tick_t length = player.length;
     _seekSlider.mediaDuration = length;
     _elapsedButton.title = [self timeString:player.currentMedia ? MAX(0, player.time) : -1];
@@ -726,6 +801,32 @@
     return [NSString stringWithFormat:@"%02lld:%02lld:%02lld", seconds / 3600, (seconds / 60) % 60, seconds % 60];
 }
 
+- (void)updateMusicMode
+{
+    VLCPlayerController *player = self.player;
+    _musicMode = player.currentMedia != nil && player.currentMediaIsAudioOnly;
+    _skipBackButton.hidden = _skipForwardButton.hidden = _waveform.hidden = !_musicMode;
+    _seekSlider.hidden = _musicMode;
+    int64_t seconds = var_InheritInteger(getIntf(), "short-jump-size");
+    _skipBackButton.image = VLCPlayerSkipImage(NO, seconds);
+    _skipForwardButton.image = VLCPlayerSkipImage(YES, seconds);
+    _skipBackButton.toolTip = _skipBackButton.accessibilityLabel =
+        [NSString stringWithFormat:_NS("Jump backward %lld seconds"), seconds];
+    _skipForwardButton.toolTip = _skipForwardButton.accessibilityLabel =
+        [NSString stringWithFormat:_NS("Jump forward %lld seconds"), seconds];
+    _skipBackButton.enabled = _skipForwardButton.enabled = player.seekable;
+    _waveform.enabled = player.seekable && player.length > 0;
+    if (_musicMode) {
+        [_waveform loadURL:player.URLOfCurrentMediaItem];
+        if (!_musicView) {
+            _musicView = [[VLCRedesignMusicView alloc] initWithFrame:NSZeroRect];
+            [self addSubview:_musicView positioned:NSWindowAbove relativeTo:_videoContainer];
+        }
+        [_musicView updateMedia];
+    }
+    _musicView.hidden = !_musicMode;
+}
+
 - (void)updatePlayer
 {
     VLCPlayerController *player = self.player;
@@ -736,11 +837,13 @@
     _titleLabel.textColor = VLCRedesignAppearance.subduedColor;
     _folderLabel.needsDisplay = YES;
     for (VLCPlayerIconButton *button in self.buttons) {
-        button.image = VLCPlayerAsset(button.assetRole);
+        if (button != _skipBackButton && button != _skipForwardButton)
+            button.image = VLCPlayerAsset(button.assetRole);
         button.needsDisplay = YES;
     }
     _logo.image = VLCPlayerAsset(@"logo");
     _divider.image = VLCPlayerAsset(@"divider");
+    [self updateMusicMode];
     _titleLabel.stringValue = player.currentMedia.name ?: @"VLC Media Player";
     NSURL *url = player.URLOfCurrentMediaItem;
     _folderLabel.title = url.isFileURL ? url.URLByDeletingLastPathComponent.lastPathComponent : _NS("Library");
@@ -829,6 +932,16 @@
         [self showSeekPreviewAtPosition:sender.floatValue];
     } else
         [self.player setPositionPrecise:sender.floatValue];
+}
+
+- (void)skipBack:(id)sender
+{
+    [self.player jumpBackwardShort];
+}
+
+- (void)skipForward:(id)sender
+{
+    [self.player jumpForwardShort];
 }
 
 - (void)volume:(NSSlider *)sender

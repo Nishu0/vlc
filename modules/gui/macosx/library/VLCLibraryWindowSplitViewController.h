@@ -48,6 +48,9 @@ typedef NS_ENUM(NSUInteger, VLCLibraryWindowSplitViewDividerIndex) {
 
 @property (readwrite, nonatomic) BOOL mainVideoModeEnabled;
 
+// Pins the floating controls bar to the library area; needed again after the
+// split view returns to the window
+- (void)attachControlsBar;
 - (IBAction)toggleNavigationSidebar:(id)sender;
 - (IBAction)toggleMultifunctionSidebar:(id)sender;
 
