@@ -31,11 +31,11 @@ static NSImage *VLCBrowserAsset(NSString *role)
     return VLCRedesignPanelImage([@"VLC-redesign-browser-" stringByAppendingString:role]);
 }
 
-static VLCRedesignAlignedLabel *VLCBrowserLabel(CGFloat size, NSUInteger color)
+static VLCRedesignAlignedLabel *VLCBrowserLabel(CGFloat size, NSColor *color)
 {
     VLCRedesignAlignedLabel *label = [VLCRedesignAlignedLabel labelWithString:@""];
     label.font = [VLCRedesignAppearance fontOfSize:size weight:NSFontWeightRegular];
-    label.textColor = [VLCRedesignAppearance colorWithRGB:color];
+    label.textColor = color;
     label.lineBreakMode = NSLineBreakByTruncatingMiddle;
     label.maximumNumberOfLines = 1;
     label.translatesAutoresizingMaskIntoConstraints = YES;
@@ -44,7 +44,7 @@ static VLCRedesignAlignedLabel *VLCBrowserLabel(CGFloat size, NSUInteger color)
 
 static void VLCBrowserDrawGridIcon(NSRect rect)
 {
-    [[VLCRedesignAppearance colorWithRGB:0x8F8F8F] setStroke];
+    [VLCRedesignAppearance.subduedColor setStroke];
     for (NSUInteger row = 0; row < 2; row++)
         for (NSUInteger column = 0; column < 2; column++) {
             NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(rect.origin.x + 1 + column * 12,
@@ -68,7 +68,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
         return;
     }
     if (self.highlighted) {
-        [[VLCRedesignAppearance colorWithRGB:0x222222] setFill];
+        [VLCRedesignAppearance.dividerColor setFill];
         [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:4 yRadius:4] fill];
     }
     VLCBrowserDrawGridIcon(NSMakeRect(NSMidX(self.bounds) - 12, NSMidY(self.bounds) - 12, 24, 24));
@@ -91,7 +91,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
         initWithString:self.title
             attributes:@{
                 NSFontAttributeName : [VLCRedesignAppearance fontOfSize:16 weight:NSFontWeightRegular],
-                NSForegroundColorAttributeName : [VLCRedesignAppearance colorWithRGB:0x8F8F8F],
+                NSForegroundColorAttributeName : VLCRedesignAppearance.subduedColor,
                 NSParagraphStyleAttributeName : style
             }];
     VLCDrawAlignedText(text, self.bounds, self.flipped, NSTextAlignmentLeft);
@@ -135,7 +135,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
     [NSGraphicsContext saveGraphicsState];
     [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:2 yRadius:2] addClip];
     if (!self.intrinsicAsset) {
-        [[VLCRedesignAppearance colorWithRGB:0x303030] setFill];
+        [VLCRedesignAppearance.hoverColor setFill];
         NSRectFill(self.bounds);
     }
     NSSize size = self.image.size;
@@ -153,7 +153,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
                          hints:nil];
     }
     if (self.progress > 0) {
-        [[VLCRedesignAppearance colorWithRGB:0xD37918] setFill];
+        [VLCRedesignAppearance.accentColor setFill];
         NSRectFill(NSMakeRect(0, self.flipped ? NSHeight(self.bounds) - 3 : 0,
                               MAX(0, MIN(1, self.progress)) * NSWidth(self.bounds), 3));
     }
@@ -182,7 +182,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 {
     self = [super initWithFrame:NSZeroRect];
     if (self) {
-        self.textField = VLCBrowserLabel(14, 0x8F8F8F);
+        self.textField = VLCBrowserLabel(14, VLCRedesignAppearance.subduedColor);
         _artwork = [[VLCBrowserArtwork alloc] init];
         [self addSubview:_artwork];
         [self addSubview:self.textField];
@@ -224,7 +224,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 - (void)drawSelectionInRect:(NSRect)dirtyRect
 {
-    [[VLCRedesignAppearance colorWithRGB:0x371F06] setFill];
+    [VLCRedesignAppearance.accentBackingColor setFill];
     [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:4 yRadius:4] fill];
 }
 
@@ -241,7 +241,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 {
     self.view = [[VLCBrowserSurface alloc] init];
     _artwork = [[VLCBrowserArtwork alloc] init];
-    NSTextField *caption = VLCBrowserLabel(16, 0x969696);
+    NSTextField *caption = VLCBrowserLabel(16, VLCRedesignAppearance.subduedColor);
     [self.view addSubview:caption];
     self.textField = caption;
     self.textField.maximumNumberOfLines = 1;
@@ -333,7 +333,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 - (void)drawRect:(NSRect)dirtyRect
 {
     if (self.chosen || self.highlighted) {
-        [[VLCRedesignAppearance colorWithRGB:0x1F1F1F] setFill];
+        [VLCRedesignAppearance.hoverColor setFill];
         [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:6 yRadius:6] fill];
     }
     NSRect icon = NSMakeRect(14, 12, 24, 24);
@@ -350,7 +350,7 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
         initWithString:self.title
             attributes:@{
                 NSFontAttributeName : [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular],
-                NSForegroundColorAttributeName : [VLCRedesignAppearance colorWithRGB:0x8F8F8F]
+                NSForegroundColorAttributeName : VLCRedesignAppearance.subduedColor
             }];
     VLCDrawAlignedText(text, NSMakeRect(48, 0, MAX(0, NSWidth(self.bounds) - 100), 48), YES, NSTextAlignmentLeft);
     if (self.chosen)
@@ -496,6 +496,8 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 @interface VLCRedesignCompactBrowser () <NSTableViewDataSource, NSTableViewDelegate, NSCollectionViewDataSource,
                                          NSCollectionViewDelegate, NSMenuDelegate, NSTextFieldDelegate>
 @property NSView *rail;
+// Rounded panel behind the browser content, beside the rail
+@property NSView *surface;
 @property NSArray<VLCRedesignPanelButton *> *railButtons;
 @property VLCRedesignPanelButton *backButton;
 @property VLCRedesignPanelButton *forwardButton;
@@ -561,6 +563,13 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     return self.state.folderURL;
 }
 
+- (void)updateAppearance
+{
+    _surface.layer.backgroundColor = VLCRedesignAppearance.overlayColor.CGColor;
+    _rail.layer.backgroundColor = VLCRedesignAppearance.panelColor.CGColor;
+    [VLCRedesignAppearance redisplay:self];
+}
+
 - (instancetype)init
 {
     self = [super initWithFrame:NSZeroRect];
@@ -568,7 +577,6 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         return nil;
 
     self.wantsLayer = YES;
-    self.layer.backgroundColor = [[VLCRedesignAppearance colorWithRGB:0x0E0E0E] colorWithAlphaComponent:.95].CGColor;
     _history =
         [NSMutableArray arrayWithObject:[[VLCBrowserLocation alloc] initWithSection:VLCRedesignBrowserSectionVideos
                                                                                mode:VLCBrowserModeFolders
@@ -587,6 +595,11 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     [self setupSearchField];
     [self setupMediaViews];
     [self setupNotifications];
+    [self updateAppearance];
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(updateAppearance)
+                                               name:VLCRedesignAppearanceChanged
+                                             object:nil];
     return self;
 }
 
@@ -596,8 +609,13 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 {
     _rail = [[VLCBrowserSurface alloc] init];
     _rail.wantsLayer = YES;
-    _rail.layer.backgroundColor = [VLCRedesignAppearance colorWithRGB:0x191919].CGColor;
     [self addSubview:_rail];
+    _surface = [[VLCBrowserSurface alloc] init];
+    _surface.wantsLayer = YES;
+    _surface.layer.cornerRadius = VLCRedesignPlayerContentRadius;
+    // Only the outer corners: the inner edge continues into the video
+    _surface.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMinXMaxYCorner;
+    [self addSubview:_surface positioned:NSWindowBelow relativeTo:nil];
     __weak typeof(self) weakSelf = self;
     NSArray *roles = @[ @"home", @"videos", @"music", @"network", @"playlists", @"recent", @"add" ];
     NSArray *names = @[
@@ -669,8 +687,8 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     _address.bordered = NO;
     _address.target = self;
     _address.action = @selector(showParents:);
-    _counter = VLCBrowserLabel(14, 0x6B6B6B);
-    _message = VLCBrowserLabel(14, 0x6B6B6B);
+    _counter = VLCBrowserLabel(14, VLCRedesignAppearance.mutedColor);
+    _message = VLCBrowserLabel(14, VLCRedesignAppearance.mutedColor);
     _message.maximumNumberOfLines = 0;
     _message.lineBreakMode = NSLineBreakByWordWrapping;
     [self addSubview:_address];
@@ -691,8 +709,8 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     _searchField.selectable = YES;
     _searchField.usesSingleLineMode = YES;
     _searchField.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular];
-    _searchField.textColor = [VLCRedesignAppearance colorWithRGB:0x8F8F8F];
-    _searchField.backgroundColor = [VLCRedesignAppearance colorWithRGB:0x090909];
+    _searchField.textColor = VLCRedesignAppearance.subduedColor;
+    _searchField.backgroundColor = VLCRedesignAppearance.recessedColor;
     _searchField.drawsBackground = YES;
     _searchField.bordered = NO;
     _searchField.placeholderString = _NS("Search media");
@@ -1457,7 +1475,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     VLCBrowserSurface *content = [[VLCBrowserSurface alloc] initWithFrame:NSMakeRect(0, 0, 265, 104)];
     content.wantsLayer = YES;
     content.layer.cornerRadius = 10;
-    content.layer.backgroundColor = [[VLCRedesignAppearance colorWithRGB:0x191919] colorWithAlphaComponent:.95].CGColor;
+    content.layer.backgroundColor = [VLCRedesignAppearance.raisedColor colorWithAlphaComponent:.95].CGColor;
     __weak typeof(self) weakSelf = self;
     for (NSInteger i = 0; i < 2; i++) {
         VLCBrowserViewOption *button = [[VLCBrowserViewOption alloc] init];
@@ -1848,6 +1866,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     [super layout];
     CGFloat width = NSWidth(self.bounds), height = NSHeight(self.bounds), content = MAX(0, width - 90);
     _rail.frame = NSMakeRect(0, 0, 50, height);
+    _surface.frame = NSMakeRect(50, 0, MAX(0, width - 50), height);
     for (NSUInteger i = 0; i < _railButtons.count; i++)
         _railButtons[i].frame = NSMakeRect(10, 8 + i * 46, 30, 32);
     _backButton.frame = NSMakeRect(70, 20, 24, 24);

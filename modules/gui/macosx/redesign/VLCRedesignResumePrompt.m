@@ -24,7 +24,7 @@
 - (void)drawRect:(NSRect)dirtyRect
 {
     NSColor *background = self.primary ? VLCRedesignAppearance.accentColor
-                                       : [VLCRedesignAppearance colorWithRGB:self.highlighted ? 0x333333 : 0x191919];
+                                       : (self.highlighted ? VLCRedesignAppearance.hoverColor : VLCRedesignAppearance.raisedColor);
     [background setFill];
     [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:4 yRadius:4] fill];
     if (self.image) {
@@ -73,6 +73,12 @@
     return YES;
 }
 
+- (void)updateAppearance
+{
+    self.layer.backgroundColor = [VLCRedesignAppearance.raisedColor colorWithAlphaComponent:.96].CGColor;
+    [VLCRedesignAppearance redisplay:self];
+}
+
 - (instancetype)initWithPosition:(NSInteger)seconds choice:(void (^)(BOOL))choice
 {
     self = [super initWithFrame:NSMakeRect(0, 0, 550, 52)];
@@ -81,7 +87,6 @@
     _choice = [choice copy];
     self.wantsLayer = YES;
     self.layer.cornerRadius = 16;
-    self.layer.backgroundColor = [[VLCRedesignAppearance colorWithRGB:0x161616] colorWithAlphaComponent:.96].CGColor;
     seconds = MAX(0, seconds);
     NSString *time = [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)(seconds / 3600),
                                                 (long)((seconds / 60) % 60), (long)(seconds % 60)];
@@ -90,7 +95,7 @@
     _fullMessage = text;
     _message = [VLCRedesignAlignedLabel labelWithString:text];
     _message.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular];
-    _message.textColor = [VLCRedesignAppearance colorWithRGB:0xBBBBBB];
+    _message.textColor = VLCRedesignAppearance.secondaryColor;
     _message.lineBreakMode = NSLineBreakByTruncatingTail;
     _message.toolTip = text;
     [self addSubview:_message];
@@ -112,6 +117,11 @@
     [self addSubview:_dismissButton];
     self.accessibilityRole = NSAccessibilityGroupRole;
     self.accessibilityLabel = text;
+    [self updateAppearance];
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(updateAppearance)
+                                               name:VLCRedesignAppearanceChanged
+                                             object:nil];
     return self;
 }
 

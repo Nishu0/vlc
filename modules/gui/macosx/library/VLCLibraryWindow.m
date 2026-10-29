@@ -645,15 +645,18 @@ static int ShowController(vlc_object_t * __unused p_this,
         return;
     }
 
-    NSAppearance *darkAppearance = nil;
-    if (@available(macOS 10.14, *)) {
-        darkAppearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-    } else {
-        darkAppearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
-    }
+    // The redesigned player follows the user's chosen theme instead
+    if (!self.videoViewController.usesRedesignedPlayer) {
+        NSAppearance *darkAppearance = nil;
+        if (@available(macOS 10.14, *)) {
+            darkAppearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+        } else {
+            darkAppearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+        }
 
-    if (darkAppearance) {
-        self.appearance = darkAppearance;
+        if (darkAppearance) {
+            self.appearance = darkAppearance;
+        }
     }
 
     if (_acquiredVideoView) {

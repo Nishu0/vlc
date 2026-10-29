@@ -61,6 +61,12 @@ static void SeekPreviewEnded(vlc_preparser_req *handle, int status,
     return YES;
 }
 
+- (void)updateAppearance
+{
+    self.layer.backgroundColor = VLCRedesignAppearance.raisedColor.CGColor;
+    [VLCRedesignAppearance redisplay:self];
+}
+
 - (instancetype)init
 {
     self = [super initWithFrame:NSMakeRect(0, 0, 200, 140)];
@@ -68,7 +74,6 @@ static void SeekPreviewEnded(vlc_preparser_req *handle, int status,
         return nil;
     self.wantsLayer = YES;
     self.layer.cornerRadius = 10;
-    self.layer.backgroundColor = [VLCRedesignAppearance colorWithRGB:0x161616].CGColor;
     self.hidden = YES;
     _cache = [[NSCache alloc] init];
     _cache.countLimit = 48;
@@ -79,7 +84,7 @@ static void SeekPreviewEnded(vlc_preparser_req *handle, int status,
     _timeLabel = [VLCRedesignAlignedLabel labelWithString:@""];
     _timeLabel.alignment = NSTextAlignmentCenter;
     _timeLabel.font = [VLCRedesignAppearance fontOfSize:12 weight:NSFontWeightRegular];
-    _timeLabel.textColor = [VLCRedesignAppearance colorWithRGB:0xBBBBBB];
+    _timeLabel.textColor = VLCRedesignAppearance.secondaryColor;
     [self addSubview:_timeLabel];
     _statusLabel = [VLCRedesignAlignedLabel labelWithString:@""];
     _statusLabel.alignment = NSTextAlignmentCenter;
@@ -87,6 +92,11 @@ static void SeekPreviewEnded(vlc_preparser_req *handle, int status,
     _statusLabel.textColor = _timeLabel.textColor;
     [self addSubview:_statusLabel];
     self.accessibilityElement = NO;
+    [self updateAppearance];
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(updateAppearance)
+                                               name:VLCRedesignAppearanceChanged
+                                             object:nil];
     return self;
 }
 

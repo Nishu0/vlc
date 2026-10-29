@@ -62,18 +62,23 @@ static NSImage *VLCTrackAsset(NSString *role)
     return VLCMain.sharedInstance.playQueueController.playerController;
 }
 
+- (void)updateAppearance
+{
+    self.layer.backgroundColor = VLCRedesignAppearance.overlayColor.CGColor;
+    _header.layer.backgroundColor = VLCRedesignAppearance.recessedColor.CGColor;
+    [VLCRedesignAppearance redisplay:self];
+}
+
 - (instancetype)init
 {
     self = [super initWithFrame:NSZeroRect];
     if (!self)
         return nil;
     self.wantsLayer = YES;
-    self.layer.backgroundColor = [[VLCRedesignAppearance colorWithRGB:0x0E0E0E] colorWithAlphaComponent:.95].CGColor;
     self.layer.cornerRadius = 10;
     self.layer.masksToBounds = YES;
     _header = [[VLCTrackDocument alloc] init];
     _header.wantsLayer = YES;
-    _header.layer.backgroundColor = [VLCRedesignAppearance colorWithRGB:0x090909].CGColor;
     [self addSubview:_header];
     __weak typeof(self) weakSelf = self;
     NSMutableArray *tabs = [NSMutableArray array];
@@ -134,6 +139,11 @@ static NSImage *VLCTrackAsset(NSString *role)
          ])
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playerChanged:) name:name object:nil];
     [self refresh];
+    [self updateAppearance];
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(updateAppearance)
+                                               name:VLCRedesignAppearanceChanged
+                                             object:nil];
     return self;
 }
 
@@ -146,7 +156,7 @@ static NSImage *VLCTrackAsset(NSString *role)
 {
     VLCRedesignAlignedLabel *label = [VLCRedesignAlignedLabel labelWithString:title];
     label.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular];
-    label.textColor = [VLCRedesignAppearance colorWithRGB:0x6B6B6B];
+    label.textColor = VLCRedesignAppearance.mutedColor;
     label.translatesAutoresizingMaskIntoConstraints = YES;
     [self addSubview:label];
     return label;

@@ -69,7 +69,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 {
     BOOL hasActiveIcon = [@[ @"queue", @"audio", @"subtitles", @"settings", @"sidebar" ] containsObject:self.assetRole];
     if (self.transport || self.highlighted || (self.selected && !hasActiveIcon)) {
-        NSColor *color = self.transport ? (self.playing ? [VLCRedesignAppearance colorWithRGB:0x6B6B6B]
+        NSColor *color = self.transport ? (self.playing ? VLCRedesignAppearance.mutedColor
                                                         : VLCRedesignAppearance.accentColor)
                                         : VLCRedesignAppearance.borderColor;
         [color setFill];
@@ -646,7 +646,12 @@ static NSImage *VLCPlayerAsset(NSString *role)
             fullscreen ? self.bounds
                        : NSMakeRect(videoX, 40, MAX(0, width - videoX - 10), MAX(0, height - 40 - barHeight));
         _videoContainer.wantsLayer = YES;
-        _videoContainer.layer.cornerRadius = fullscreen ? 0 : 12;
+        _videoContainer.layer.cornerRadius = fullscreen ? 0 : VLCRedesignPlayerContentRadius;
+        // Beside the browser, video and panel read as one rounded surface
+        _videoContainer.layer.maskedCorners = browserWidth > 0
+                                                  ? kCALayerMaxXMinYCorner | kCALayerMaxXMaxYCorner
+                                                  : kCALayerMinXMinYCorner | kCALayerMinXMaxYCorner |
+                                                        kCALayerMaxXMinYCorner | kCALayerMaxXMaxYCorner;
         _videoContainer.layer.masksToBounds = YES;
     }
     _logo.frame = NSMakeRect(13, 8, 24, 24);
@@ -781,6 +786,7 @@ static NSImage *VLCPlayerAsset(NSString *role)
 {
     VLCPlayerController *player = self.player;
     VLCPlayQueueController *queue = VLCMain.sharedInstance.playQueueController;
+    self.appearance = VLCRedesignAppearance.themeAppearance;
     self.layer.backgroundColor = VLCRedesignAppearance.panelColor.CGColor;
     _topBar.layer.backgroundColor = _bottomBar.layer.backgroundColor = VLCRedesignAppearance.panelColor.CGColor;
     _titleLabel.textColor = VLCRedesignAppearance.subduedColor;

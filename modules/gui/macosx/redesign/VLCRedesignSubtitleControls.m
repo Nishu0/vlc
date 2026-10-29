@@ -14,7 +14,7 @@ static VLCRedesignAlignedLabel *AppearanceLabel(NSString *title)
 {
     VLCRedesignAlignedLabel *label = [VLCRedesignAlignedLabel labelWithString:title];
     label.font = [VLCRedesignAppearance fontOfSize:13 weight:NSFontWeightRegular];
-    label.textColor = [VLCRedesignAppearance colorWithRGB:0x969696];
+    label.textColor = VLCRedesignAppearance.subduedColor;
     label.lineBreakMode = NSLineBreakByTruncatingTail;
     return label;
 }
@@ -46,8 +46,8 @@ static NSRect AppearanceControlFrame(NSView *view)
     _field = [[NSTextField alloc] init];
     _field.cell = [[VLCRedesignAlignedTextFieldCell alloc] initTextCell:@""];
     _field.font = [VLCRedesignAppearance fontOfSize:12 weight:NSFontWeightRegular];
-    _field.textColor = [VLCRedesignAppearance colorWithRGB:0xBBBBBB];
-    _field.backgroundColor = NSColor.blackColor;
+    _field.textColor = VLCRedesignAppearance.secondaryColor;
+    _field.backgroundColor = VLCRedesignAppearance.recessedColor;
     _field.bordered = NO;
     _field.drawsBackground = YES;
     _field.editable = YES;
@@ -141,13 +141,13 @@ static NSRect AppearanceControlFrame(NSView *view)
 {
     BOOL selected = [self isSelectedForSegment:segment];
     NSColor *background = selected ? [VLCRedesignAppearance.accentColor colorWithAlphaComponent:.25]
-                                    : [VLCRedesignAppearance colorWithRGB:0x090909];
+                                    : VLCRedesignAppearance.recessedColor;
     [background setFill];
     [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(frame, 1, 0) xRadius:4 yRadius:4] fill];
     NSAttributedString *title = [[NSAttributedString alloc] initWithString:[self labelForSegment:segment]
         attributes:@{ NSFontAttributeName : [VLCRedesignAppearance fontOfSize:12 weight:NSFontWeightRegular],
                       NSForegroundColorAttributeName : selected ? VLCRedesignAppearance.accentColor
-                                                                : [VLCRedesignAppearance colorWithRGB:0x969696] }];
+                                                                : VLCRedesignAppearance.subduedColor }];
     VLCDrawAlignedText(title, NSInsetRect(frame, 6, 0), view.flipped, NSTextAlignmentCenter);
     if (view.window.firstResponder == view) {
         [VLCRedesignAppearance.accentColor setStroke];

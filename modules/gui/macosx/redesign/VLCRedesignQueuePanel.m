@@ -78,7 +78,7 @@ static NSString *VLCQueueTime(vlc_tick_t time, BOOL milliseconds)
 
 - (void)drawSelectionInRect:(NSRect)dirtyRect
 {
-    [[VLCRedesignAppearance colorWithRGB:0x371F06] setFill];
+    [VLCRedesignAppearance.accentBackingColor setFill];
     [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(self.bounds, 0, 2) xRadius:4 yRadius:4] fill];
 }
 
@@ -110,10 +110,10 @@ static NSString *VLCQueueTime(vlc_tick_t time, BOOL milliseconds)
     [self addSubview:self.textField];
     _durationLabel = [self label];
     _durationLabel.alignment = NSTextAlignmentRight;
-    _durationLabel.textColor = [VLCRedesignAppearance colorWithRGB:0x6B6B6B];
+    _durationLabel.textColor = VLCRedesignAppearance.mutedColor;
     _numberLabel = [self label];
     _numberLabel.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightMedium];
-    _numberLabel.textColor = [VLCRedesignAppearance colorWithRGB:0xD37918];
+    _numberLabel.textColor = VLCRedesignAppearance.accentColor;
     _grip = [[NSImageView alloc] init];
     _grip.image = VLCQueueAsset(@"grip");
     _grip.imageScaling = NSImageScaleNone;
@@ -127,7 +127,7 @@ static NSString *VLCQueueTime(vlc_tick_t time, BOOL milliseconds)
 {
     VLCRedesignAlignedLabel *label = [VLCRedesignAlignedLabel labelWithString:@""];
     label.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular];
-    label.textColor = [VLCRedesignAppearance colorWithRGB:0x969696];
+    label.textColor = VLCRedesignAppearance.subduedColor;
     label.lineBreakMode = NSLineBreakByTruncatingMiddle;
     label.maximumNumberOfLines = 1;
     label.translatesAutoresizingMaskIntoConstraints = YES;
@@ -212,6 +212,13 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
     return self.queue.playerController;
 }
 
+- (void)updateAppearance
+{
+    self.layer.backgroundColor = VLCRedesignAppearance.overlayColor.CGColor;
+    _header.layer.backgroundColor = VLCRedesignAppearance.recessedColor.CGColor;
+    [VLCRedesignAppearance redisplay:self];
+}
+
 - (instancetype)init
 {
     self = [super initWithFrame:NSZeroRect];
@@ -220,10 +227,8 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
     self.wantsLayer = YES;
     self.layer.cornerRadius = 10;
     self.layer.masksToBounds = YES;
-    self.layer.backgroundColor = [[VLCRedesignAppearance colorWithRGB:0x0E0E0E] colorWithAlphaComponent:.95].CGColor;
     _header = [[VLCQueueHeader alloc] init];
     _header.wantsLayer = YES;
-    _header.layer.backgroundColor = [VLCRedesignAppearance colorWithRGB:0x090909].CGColor;
     [self addSubview:_header];
     __weak typeof(self) weakSelf = self;
     NSMutableArray *tabs = [NSMutableArray array];
@@ -242,7 +247,7 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
     _tabs = tabs;
     _counter = [VLCRedesignAlignedLabel labelWithString:@""];
     _counter.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular];
-    _counter.textColor = [VLCRedesignAppearance colorWithRGB:0x6B6B6B];
+    _counter.textColor = VLCRedesignAppearance.mutedColor;
     _counter.lineBreakMode = NSLineBreakByTruncatingTail;
     _counter.maximumNumberOfLines = 1;
     _counter.translatesAutoresizingMaskIntoConstraints = YES;
@@ -310,7 +315,7 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
     [self addSubview:_scroll];
     _emptyLabel = [VLCRedesignAlignedLabel labelWithString:@""];
     _emptyLabel.font = [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular];
-    _emptyLabel.textColor = [VLCRedesignAppearance colorWithRGB:0x6B6B6B];
+    _emptyLabel.textColor = VLCRedesignAppearance.mutedColor;
     _emptyLabel.alignment = NSTextAlignmentCenter;
     _emptyLabel.translatesAutoresizingMaskIntoConstraints = YES;
     [self addSubview:_emptyLabel];
@@ -337,6 +342,11 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
             vlc_ml_event_register_callback(_mediaLibrary, VLCQueueBookmarkChanged, (__bridge void *)_bookmarkObserver);
     }
     [self refresh];
+    [self updateAppearance];
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(updateAppearance)
+                                               name:VLCRedesignAppearanceChanged
+                                             object:nil];
     return self;
 }
 
@@ -433,7 +443,9 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
                 total += item.duration;
         }
         NSString *duration = known ? VLCQueueTime(total, NO) : _NS("Unknown duration");
-        _counter.stringValue = [NSString stringWithFormat:_NS("%lu items - %@"), _items.count, duration];
+        _counter.stringValue = _items.count == 1
+                                    ? [NSString stringWithFormat:_NS("1 item - %@"), duration]
+                                    : [NSString stringWithFormat:_NS("%lu items - %@"), _items.count, duration];
     } else
         _counter.stringValue = [NSString stringWithFormat:_NS("%lu Bookmarks"), _bookmarks.count];
     _counter.hidden = _selectedTab == 2;
@@ -510,7 +522,7 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
     }
     cell.textField.stringValue = title ?: @"";
     cell.textField.toolTip = title;
-    cell.textField.textColor = [VLCRedesignAppearance colorWithRGB:current ? 0xD37918 : 0x969696];
+    cell.textField.textColor = current ? VLCRedesignAppearance.accentColor : VLCRedesignAppearance.subduedColor;
     cell.durationLabel.stringValue = time;
     cell.numberLabel.stringValue = [NSString stringWithFormat:@"%ld", row + 1];
     cell.needsLayout = YES;

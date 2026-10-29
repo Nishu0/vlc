@@ -112,7 +112,7 @@ static NSString *const VLCInspectorSleepTimerChanged = @"VLCInspectorSleepTimerC
 - (void)drawBarInside:(NSRect)rect flipped:(BOOL)flipped
 {
     NSRect bar = NSMakeRect(NSMinX(rect), NSMidY(rect) - 4, NSWidth(rect), 8);
-    [NSColor.blackColor setFill];
+    [VLCRedesignAppearance.recessedColor setFill];
     [[NSBezierPath bezierPathWithRoundedRect:bar xRadius:4 yRadius:4] fill];
     double progress = (self.doubleValue - self.minValue) / MAX(DBL_EPSILON, self.maxValue - self.minValue);
     bar.size.width *= MAX(0, MIN(1, progress));
@@ -122,7 +122,7 @@ static NSString *const VLCInspectorSleepTimerChanged = @"VLCInspectorSleepTimerC
 
 - (void)drawKnob:(NSRect)rect
 {
-    NSColor *color = self.enabled ? VLCRedesignAppearance.accentColor : NSColor.darkGrayColor;
+    NSColor *color = self.enabled ? VLCRedesignAppearance.accentColor : VLCRedesignAppearance.borderColor;
     [color setFill];
     [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(NSMidX(rect) - 3, NSMidY(rect) - 9, 6, 18) xRadius:3
                                      yRadius:3] fill];
@@ -146,14 +146,14 @@ static NSString *const VLCInspectorSleepTimerChanged = @"VLCInspectorSleepTimerC
         initWithString:self.title
             attributes:@{
                 NSFontAttributeName : [VLCRedesignAppearance fontOfSize:13 weight:NSFontWeightRegular],
-                NSForegroundColorAttributeName : [VLCRedesignAppearance colorWithRGB:self.enabled ? 0x969696 : 0x555555]
+                NSForegroundColorAttributeName : (self.enabled ? VLCRedesignAppearance.subduedColor : VLCRedesignAppearance.mutedColor)
             }];
     VLCDrawAlignedText(title, NSMakeRect(0, 0, MAX(0, width - 62), NSHeight(self.bounds)), YES, NSTextAlignmentLeft);
     NSRect track = NSMakeRect(width - 52, (NSHeight(self.bounds) - 24) / 2, 52, 24);
-    [NSColor.blackColor setFill];
+    [VLCRedesignAppearance.recessedColor setFill];
     [[NSBezierPath bezierPathWithRoundedRect:track xRadius:4 yRadius:4] fill];
     BOOL on = self.state == NSControlStateValueOn;
-    NSColor *color = on && self.enabled ? VLCRedesignAppearance.accentColor : NSColor.darkGrayColor;
+    NSColor *color = on && self.enabled ? VLCRedesignAppearance.accentColor : VLCRedesignAppearance.borderColor;
     [color setFill];
     NSRect knob = NSMakeRect(NSMinX(track) + (on ? 28 : 3), NSMinY(track) + 3, 21, 18);
     [[NSBezierPath bezierPathWithRoundedRect:knob xRadius:2 yRadius:2] fill];
@@ -161,7 +161,7 @@ static NSString *const VLCInspectorSleepTimerChanged = @"VLCInspectorSleepTimerC
         initWithString:on ? _NS("ON") : _NS("OFF")
             attributes:@{
                 NSFontAttributeName : [VLCRedesignAppearance fontOfSize:9 weight:NSFontWeightRegular],
-                NSForegroundColorAttributeName : [VLCRedesignAppearance colorWithRGB:0x969696]
+                NSForegroundColorAttributeName : VLCRedesignAppearance.subduedColor
             }];
     NSRect text = NSMakeRect(NSMinX(track) + (on ? 2 : 27), NSMinY(track), 23, NSHeight(track));
     VLCDrawAlignedText(value, text, YES, NSTextAlignmentCenter);
@@ -179,13 +179,13 @@ static NSString *const VLCInspectorSleepTimerChanged = @"VLCInspectorSleepTimerC
 
 - (void)drawWithFrame:(NSRect)frame inView:(NSView *)view
 {
-    [[VLCRedesignAppearance colorWithRGB:self.highlighted ? 0x222222 : 0x090909] setFill];
+    [(self.highlighted ? VLCRedesignAppearance.dividerColor : VLCRedesignAppearance.recessedColor) setFill];
     [[NSBezierPath bezierPathWithRoundedRect:frame xRadius:4 yRadius:4] fill];
     NSAttributedString *title = [[NSAttributedString alloc]
         initWithString:self.title
             attributes:@{
                 NSFontAttributeName : [VLCRedesignAppearance fontOfSize:12 weight:NSFontWeightRegular],
-                NSForegroundColorAttributeName : [VLCRedesignAppearance colorWithRGB:self.enabled ? 0x969696 : 0x555555]
+                NSForegroundColorAttributeName : (self.enabled ? VLCRedesignAppearance.subduedColor : VLCRedesignAppearance.mutedColor)
             }];
     VLCDrawAlignedText(title,
                        NSMakeRect(NSMinX(frame) + 10, NSMinY(frame), MAX(0, NSWidth(frame) - 34), NSHeight(frame)),
@@ -223,7 +223,7 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
 {
     VLCRedesignAlignedLabel *label = [VLCRedesignAlignedLabel labelWithString:text];
     label.font = [VLCRedesignAppearance fontOfSize:size weight:NSFontWeightRegular];
-    label.textColor = [VLCRedesignAppearance colorWithRGB:0x969696];
+    label.textColor = VLCRedesignAppearance.subduedColor;
     label.lineBreakMode = NSLineBreakByTruncatingTail;
     label.translatesAutoresizingMaskIntoConstraints = YES;
     return label;
@@ -246,8 +246,8 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     _field = [[NSTextField alloc] init];
     _field.cell = [[VLCRedesignAlignedTextFieldCell alloc] initTextCell:@""];
     _field.font = [VLCRedesignAppearance fontOfSize:12 weight:NSFontWeightRegular];
-    _field.textColor = [VLCRedesignAppearance colorWithRGB:0xBBBBBB];
-    _field.backgroundColor = NSColor.blackColor;
+    _field.textColor = VLCRedesignAppearance.secondaryColor;
+    _field.backgroundColor = VLCRedesignAppearance.recessedColor;
     _field.bordered = NO;
     _field.wantsLayer = YES;
     _field.layer.cornerRadius = 4;
@@ -360,16 +360,20 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
     return VLCMain.sharedInstance.playQueueController.playerController;
 }
 
+- (void)updateAppearance
+{
+    self.layer.backgroundColor = VLCRedesignAppearance.overlayColor.CGColor;
+    [VLCRedesignAppearance redisplay:self];
+}
+
 - (instancetype)init
 {
     self = [super initWithFrame:NSZeroRect];
     if (!self)
         return nil;
     self.wantsLayer = YES;
-    self.layer.backgroundColor = [[VLCRedesignAppearance colorWithRGB:0x0E0E0E] colorWithAlphaComponent:.95].CGColor;
     self.layer.cornerRadius = 10;
     self.layer.masksToBounds = YES;
-    self.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
     _header = [[VLCInspectorDocument alloc] init];
     [self addSubview:_header];
     __weak typeof(self) weakSelf = self;
@@ -402,6 +406,11 @@ static VLCRedesignAlignedLabel *VLCInspectorLabel(NSString *text, CGFloat size)
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playerChanged:) name:name object:nil];
     }
     [self buildContent];
+    [self updateAppearance];
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(updateAppearance)
+                                               name:VLCRedesignAppearanceChanged
+                                             object:nil];
     return self;
 }
 

@@ -106,13 +106,13 @@ NSImage *VLCRedesignPanelImage(NSString *name)
 {
     NSRect bounds = self.bounds;
     if (self.footer || self.highlighted || (self.highlightedSelection && self.state == NSControlStateValueOn)) {
-        [[VLCRedesignAppearance colorWithRGB:self.highlighted ? 0x222222 : 0x090909] setFill];
+        [(self.highlighted ? VLCRedesignAppearance.dividerColor : VLCRedesignAppearance.recessedColor) setFill];
         [[NSBezierPath bezierPathWithRoundedRect:bounds xRadius:4 yRadius:4] fill];
     }
-    NSColor *color =
-        [VLCRedesignAppearance colorWithRGB:self.tab      ? (self.state == NSControlStateValueOn ? 0x8F8F8F : 0x6B6B6B)
-                                            : self.footer ? 0x6B6B6B
-                                                          : 0x969696];
+    NSColor *color = self.tab      ? (self.state == NSControlStateValueOn ? VLCRedesignAppearance.subduedColor
+                                                                          : VLCRedesignAppearance.mutedColor)
+                     : self.footer ? VLCRedesignAppearance.mutedColor
+                                   : VLCRedesignAppearance.subduedColor;
     NSFont *font = [VLCRedesignAppearance fontOfSize:self.tab ? 12 : 14 weight:NSFontWeightRegular];
     NSMutableParagraphStyle *paragraph = [[NSMutableParagraphStyle alloc] init];
     paragraph.lineBreakMode = NSLineBreakByTruncatingTail;
