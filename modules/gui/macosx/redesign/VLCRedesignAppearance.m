@@ -165,7 +165,9 @@ static NSString *const VLCAccentKey = @"VLCRedesignAccentIndex";
 
 + (NSColor *)overlayColor
 {
-    return [self.backgroundColor colorWithAlphaComponent:.95];
+    // The design's 95% fill relies on a backdrop blur; without one the video shows
+    // through, while the reference video shows a solid panel
+    return self.backgroundColor;
 }
 
 + (NSColor *)accentColorForDark:(BOOL)dark

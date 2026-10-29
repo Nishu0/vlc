@@ -109,6 +109,18 @@ static void bookmarksLibraryCallback(void *p_data, const vlc_ml_event_t *p_event
     _eventCallback = vlc_ml_event_register_callback(_mediaLibrary,
                                                     bookmarksLibraryCallback,
                                                     (__bridge void *)self);
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(applicationWillTerminate:)
+                                               name:NSApplicationWillTerminateNotification
+                                             object:nil];
+}
+
+- (void)applicationWillTerminate:(NSNotification *)notification
+{
+    if (_eventCallback != NULL) {
+        vlc_ml_event_unregister_callback(_mediaLibrary, _eventCallback);
+        _eventCallback = NULL;
+    }
 }
 
 - (void)updateLibraryItemId

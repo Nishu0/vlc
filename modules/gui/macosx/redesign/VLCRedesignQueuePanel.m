@@ -340,6 +340,11 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
         _bookmarkObserver.owner = self;
         _bookmarkCallback =
             vlc_ml_event_register_callback(_mediaLibrary, VLCQueueBookmarkChanged, (__bridge void *)_bookmarkObserver);
+        // libvlc requires every library callback to be gone before it shuts down
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(applicationWillTerminate:)
+                                                   name:NSApplicationWillTerminateNotification
+                                                 object:nil];
     }
     [self refresh];
     [self updateAppearance];
@@ -350,11 +355,18 @@ static void VLCQueueBookmarkChanged(void *data, const vlc_ml_event_t *event)
     return self;
 }
 
+- (void)applicationWillTerminate:(NSNotification *)notification
+{
+    if (_bookmarkCallback) {
+        vlc_ml_event_unregister_callback(_mediaLibrary, _bookmarkCallback);
+        _bookmarkCallback = NULL;
+    }
+}
+
 - (void)dealloc
 {
     [NSNotificationCenter.defaultCenter removeObserver:self];
-    if (_bookmarkCallback)
-        vlc_ml_event_unregister_callback(_mediaLibrary, _bookmarkCallback);
+    [self applicationWillTerminate:nil];
 }
 
 - (VLCRedesignPanelButton *)icon:(NSString *)role label:(NSString *)label action:(void (^)(void))action

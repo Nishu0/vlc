@@ -27,7 +27,7 @@ extern const CGFloat VLCRedesignPlayerContentRadius;
 @property (class, readonly) NSColor *subduedColor;
 @property (class, readonly) NSColor *borderColor;
 @property (class, readonly) NSColor *accentColor;
-// Translucent surface behind floating panels and popovers
+// Surface behind floating panels and popovers
 @property (class, readonly) NSColor *overlayColor;
 // Raised surface for rails, menus and previews
 @property (class, readonly) NSColor *raisedColor;

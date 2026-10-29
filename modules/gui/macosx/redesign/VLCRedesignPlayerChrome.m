@@ -706,12 +706,14 @@ static NSImage *VLCPlayerAsset(NSString *role)
                                        MIN(400, MAX(0, width - 40)), panelHeight);
     }
     if (_queuePanel) {
-        CGFloat panelHeight = MIN(946, MAX(180, height - barHeight - 60));
+        // 20 pt from the top bar, the bottom bar and the right edge, as in the reference
+        CGFloat panelHeight = MIN(946, MAX(180, height - barHeight - 80));
         _queuePanel.frame = NSMakeRect(MAX(10, width - 420), MAX(40, height - barHeight - 20 - panelHeight),
                                        MIN(400, MAX(0, width - 40)), panelHeight);
     }
     if (_inspector) {
-        CGFloat panelHeight = MIN(946, MAX(180, height - barHeight - 60));
+        // 20 pt from the top bar, the bottom bar and the right edge, as in the reference
+        CGFloat panelHeight = MIN(946, MAX(180, height - barHeight - 80));
         _inspector.frame = NSMakeRect(MAX(10, width - 420), MAX(40, height - barHeight - 20 - panelHeight),
                                       MIN(400, MAX(0, width - 40)), panelHeight);
     }
