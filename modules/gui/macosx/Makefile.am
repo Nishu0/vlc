@@ -126,6 +126,8 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignIconButton.m \
 	gui/macosx/redesign/VLCRedesignLibraryView.h \
 	gui/macosx/redesign/VLCRedesignLibraryView.m \
+	gui/macosx/redesign/VLCRedesignMiniPlayer.h \
+	gui/macosx/redesign/VLCRedesignMiniPlayer.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \

@@ -7,6 +7,7 @@
 #import "VLCRedesignLibraryView.h"
 #import "VLCRedesignAppearance.h"
 #import "VLCRedesignIconButton.h"
+#import "VLCRedesignMiniPlayer.h"
 #import "VLCRedesignTextLayout.h"
 #import "extensions/NSString+Helpers.h"
 #import "main/VLCMain.h"
@@ -17,6 +18,10 @@
 #import "library/media-source/VLCMediaSourceBaseDataSource.h"
 #import "library/media-source/VLCMediaSource.h"
 #import "library/media-source/VLCMediaSourceDataSource.h"
+#import "library/VLCInputItem.h"
+#import "playqueue/VLCPlayerController.h"
+#import "playqueue/VLCPlayQueueController.h"
+#import "windows/video/VLCMainVideoViewController.h"
 
 /* Window title bar: dragging it moves the window and a double click zooms,
  * like the native title bar it replaces. */
@@ -49,6 +54,7 @@
 @property NSImageView *logo;
 @property VLCRedesignAlignedLabel *titleLabel;
 @property NSArray<VLCPlayerIconButton *> *buttons;
+@property VLCRedesignMiniPlayer *miniPlayer;
 @end
 
 @implementation VLCRedesignLibraryView
@@ -101,12 +107,67 @@
         [buttons addObject:button];
     }
     _buttons = buttons;
+    [self setupMiniPlayer];
     [self updateAppearance];
     [NSNotificationCenter.defaultCenter addObserver:self
                                            selector:@selector(updateAppearance)
                                                name:VLCRedesignAppearanceChanged
                                              object:nil];
     return self;
+}
+
+- (void)setupMiniPlayer
+{
+    _miniPlayer = [[VLCRedesignMiniPlayer alloc] initWithFrame:NSZeroRect];
+    _miniPlayer.hidden = YES;
+    __weak typeof(self) weakSelf = self;
+    _miniPlayer.openPlayer = ^{
+        [VLCMain.sharedInstance.libraryWindow enableVideoPlaybackAppearance];
+    };
+    _miniPlayer.openQueue = ^{
+        VLCLibraryWindow *window = VLCMain.sharedInstance.libraryWindow;
+        [window enableVideoPlaybackAppearance];
+        [window.videoViewController togglePlayQueue:nil];
+    };
+    _miniPlayer.cornerChanged = ^{
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+            context.duration = .18;
+            context.allowsImplicitAnimation = YES;
+            [weakSelf layoutMiniPlayer];
+        }];
+    };
+    [self addSubview:_miniPlayer];
+    for (NSString *name in @[ VLCPlayerStateChanged, VLCPlayerCurrentMediaItemChanged ])
+        [NSNotificationCenter.defaultCenter addObserver:self
+                                               selector:@selector(playbackChanged:)
+                                                   name:name
+                                                 object:nil];
+    [self playbackChanged:nil];
+}
+
+- (void)playbackChanged:(NSNotification *)notification
+{
+    VLCPlayerController *player = VLCMain.sharedInstance.playQueueController.playerController;
+    BOOL playing = player.currentMedia != nil && player.playerState != VLC_PLAYER_STATE_STOPPED;
+    _miniPlayer.hidden = !playing;
+    _titleLabel.stringValue = playing && player.currentMedia.name.length ? player.currentMedia.name : @"VLC Media Player";
+    self.needsLayout = YES;
+}
+
+- (void)setMiniPlayerVideoView:(NSView *)videoView
+{
+    [_miniPlayer setVideoView:videoView];
+}
+
+- (void)layoutMiniPlayer
+{
+    NSSize size = VLCRedesignMiniPlayerSize;
+    CGFloat width = NSWidth(self.bounds), height = NSHeight(self.bounds);
+    /* Smaller windows get a proportionally smaller card */
+    CGFloat scale = MAX(.6, MIN(1, MIN(width * .3 / size.width, height * .45 / size.height)));
+    size = NSMakeSize(floor(size.width * scale), floor(size.height * scale));
+    CGFloat x = _miniPlayer.leftCorner ? 6 : width - size.width - 6;
+    _miniPlayer.frame = NSMakeRect(x, height - size.height - 6, size.width, size.height);
 }
 
 - (void)dealloc
@@ -140,11 +201,12 @@
     CGFloat margin = MIN(310, width * .3);
     _titleLabel.frame = NSMakeRect(margin, 6, MAX(0, width - 2 * margin), 28);
     _titleLabel.hidden = width < 480;
+    [self layoutMiniPlayer];
 }
 
 - (void)showSection:(VLCRedesignBrowserSection)section folder:(NSURL *)folder grid:(BOOL)grid
 {
-    [_browser setGridMode:grid];
+    /* The full library keeps its own grid or list choice rather than the compact browser's */
     if (folder.isFileURL)
         [_browser browseFolder:folder];
     else

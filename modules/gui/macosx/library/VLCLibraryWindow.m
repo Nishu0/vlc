@@ -583,7 +583,9 @@ static int ShowController(vlc_object_t * __unused p_this,
         return;
 
     _acquiredVideoView = [self.videoViewController acquireVideoView];
-    if (_acquiredVideoView) {
+    if (_acquiredVideoView && _redesignedLibraryView) {
+        [_redesignedLibraryView setMiniPlayerVideoView:_acquiredVideoView];
+    } else if (_acquiredVideoView) {
         [self.controlsBar.artworkImageView addSubview:_acquiredVideoView
                                            positioned:NSWindowBelow
                                            relativeTo:self.artworkButton];
@@ -700,6 +702,7 @@ static int ShowController(vlc_object_t * __unused p_this,
     }
 
     if (_acquiredVideoView) {
+        [_redesignedLibraryView setMiniPlayerVideoView:nil];
         [self.videoViewController returnVideoView:_acquiredVideoView];
         _acquiredVideoView = nil;
     }

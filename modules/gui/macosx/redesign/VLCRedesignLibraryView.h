@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly) VLCRedesignCompactBrowser *browser;
 
 - (void)showSection:(VLCRedesignBrowserSection)section folder:(nullable NSURL *)folder grid:(BOOL)grid;
+// Live video borrowed from the player while browsing, or nil to release it
+- (void)setMiniPlayerVideoView:(nullable NSView *)videoView;
 
 @end
 
