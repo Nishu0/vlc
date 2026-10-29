@@ -42,6 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class VLCLibraryWindowToolbarDelegate;
 @class VLCLoadingOverlayView;
 @class VLCNoResultsLabel;
+@class VLCRedesignLibraryView;
 
 @protocol VLCMediaLibraryItemProtocol;
 
@@ -127,6 +128,8 @@ extern NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey;
 @property (readonly) VLCLibraryAbstractSegmentViewController *librarySegmentViewController;
 @property (readonly) VLCLibrarySortingMenuController *librarySortingMenuController;
 @property (readonly) VLCPlayQueueController *playQueueController;
+// Full-window library shown instead of the classic library with the redesigned player
+@property (readonly, nullable) VLCRedesignLibraryView *redesignedLibraryView;
 
 - (void)enableVideoPlaybackAppearance;
 - (void)disableVideoPlaybackAppearance;
@@ -145,6 +148,9 @@ extern NSString * const VLCLibraryWindowEmbeddedVideoPlaybackActiveKey;
                              displayingMessage:(NSString *)message;
 - (void)displayNoResultsMessage;
 - (void)browseFolderByMrl:(NSString *)mrl;
+- (void)presentRedesignedLibrary;
+// Classic library screens for features the redesign does not cover yet
+- (void)presentClassicLibrary;
 
 - (IBAction)goToBrowseSection:(id)sender;
 - (IBAction)sortLibrary:(id)sender;

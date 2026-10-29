@@ -26,8 +26,12 @@ typedef NS_ENUM(NSInteger, VLCRedesignBrowserSection) {
     (NSURL *_Nullable folder, VLCRedesignBrowserSection section, BOOL grid);
 @property (nonatomic, copy, nullable) void (^openNetworkSource)(VLCMediaSource *source);
 @property (nonatomic, readonly, nullable) NSURL *currentFolderURL;
+// Full-window library: labelled sidebar, breadcrumbs, large grid and Home sections
+@property (nonatomic) BOOL fullLibrary;
 
 - (void)browseFolder:(NSURL *)url;
+- (void)showSection:(VLCRedesignBrowserSection)section;
+- (void)setGridMode:(BOOL)grid;
 - (void)reload;
 
 @end

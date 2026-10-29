@@ -81,6 +81,8 @@
 #import "playqueue/VLCPlayQueueController.h"
 #import "playqueue/VLCPlayQueueModel.h"
 
+#import "redesign/VLCRedesignLibraryView.h"
+
 #import "views/VLCBottomBarView.h"
 #import "views/VLCDragDropView.h"
 #import "views/VLCImageView.h"
@@ -210,6 +212,44 @@ static int ShowController(vlc_object_t * __unused p_this,
     [self setupLoadingOverlayView];
 
     self.librarySearchField.delegate = self;
+    [self presentRedesignedLibrary];
+}
+
+- (void)presentRedesignedLibrary
+{
+    if (!self.videoViewController.usesRedesignedPlayer)
+        return;
+    if (!_redesignedLibraryView) {
+        _redesignedLibraryView = [[VLCRedesignLibraryView alloc] initWithFrame:self.contentView.bounds];
+        _redesignedLibraryView.translatesAutoresizingMaskIntoConstraints = NO;
+    }
+    NSView * const contentView = self.contentView;
+    if (_redesignedLibraryView.superview != contentView) {
+        [contentView addSubview:_redesignedLibraryView positioned:NSWindowAbove relativeTo:nil];
+        [_redesignedLibraryView applyConstraintsToFillSuperview];
+    }
+    _redesignedLibraryView.hidden = NO;
+
+    // The redesigned library draws its own title bar and window controls
+    self.toolbar.visible = NO;
+    self.titlebarAppearsTransparent = YES;
+    self.titleVisibility = NSWindowTitleHidden;
+    for (NSNumber *button in @[@(NSWindowCloseButton), @(NSWindowMiniaturizeButton), @(NSWindowZoomButton)])
+        [self standardWindowButton:button.integerValue].hidden = YES;
+}
+
+- (void)presentClassicLibrary
+{
+    if (!_redesignedLibraryView || _redesignedLibraryView.hidden)
+        return;
+    _redesignedLibraryView.hidden = YES;
+    if (self.embeddedVideoPlaybackActive)
+        return;
+    self.toolbar.visible = YES;
+    self.titlebarAppearsTransparent = NO;
+    self.titleVisibility = NSWindowTitleVisible;
+    for (NSNumber *button in @[@(NSWindowCloseButton), @(NSWindowMiniaturizeButton), @(NSWindowZoomButton)])
+        [self standardWindowButton:button.integerValue].hidden = NO;
 }
 
 - (void)dealloc
@@ -664,6 +704,7 @@ static int ShowController(vlc_object_t * __unused p_this,
         _acquiredVideoView = nil;
     }
 
+    _redesignedLibraryView.hidden = YES;
     [self presentVideoView];
     [self enableVideoTitleBarMode];
     [self hideControlsBarImmediately];
@@ -715,6 +756,8 @@ static int ShowController(vlc_object_t * __unused p_this,
     if ([self.librarySegmentViewController isKindOfClass:VLCLibraryAbstractMediaLibrarySegmentViewController.class]) {
         [(VLCLibraryAbstractMediaLibrarySegmentViewController *)self.librarySegmentViewController connect];
     }
+
+    [self presentRedesignedLibrary];
 }
 
 - (void)showLoadingOverlay

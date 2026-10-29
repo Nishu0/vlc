@@ -42,6 +42,21 @@ static VLCRedesignAlignedLabel *VLCBrowserLabel(CGFloat size, NSColor *color)
     return label;
 }
 
+/* Active sidebar icons are single-colour shapes; tinting follows the chosen accent. */
+static NSImage *VLCBrowserTinted(NSImage *image, NSColor *color)
+{
+    if (!image)
+        return nil;
+    return [NSImage imageWithSize:image.size
+                          flipped:NO
+                   drawingHandler:^BOOL(NSRect rect) {
+                       [image drawInRect:rect];
+                       [color set];
+                       NSRectFillUsingOperation(rect, NSCompositingOperationSourceAtop);
+                       return YES;
+                   }];
+}
+
 static void VLCBrowserDrawGridIcon(NSRect rect)
 {
     [VLCRedesignAppearance.subduedColor setStroke];
@@ -80,11 +95,45 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 @end
 @interface VLCBrowserAddressButton : NSButton
+// Path shown as "Videos ▸ Shows ▸ S01", the last component emphasised
+@property (copy) NSArray<NSString *> *crumbs;
 @end
 @implementation VLCBrowserAddressButton
 
+- (void)drawBreadcrumbs
+{
+    NSMutableAttributedString *text = [[NSMutableAttributedString alloc] init];
+    NSDictionary *separator = @{
+        NSFontAttributeName : [VLCRedesignAppearance fontOfSize:8 weight:NSFontWeightRegular],
+        NSForegroundColorAttributeName : VLCRedesignAppearance.borderColor,
+        NSBaselineOffsetAttributeName : @3
+    };
+    for (NSUInteger i = 0; i < _crumbs.count; i++) {
+        BOOL last = i + 1 == _crumbs.count;
+        if (i > 0)
+            [text appendAttributedString:[[NSAttributedString alloc] initWithString:@"  ▶  " attributes:separator]];
+        [text appendAttributedString:[[NSAttributedString alloc]
+                                         initWithString:_crumbs[i]
+                                             attributes:@{
+                                                 NSFontAttributeName : [VLCRedesignAppearance
+                                                     fontOfSize:16
+                                                         weight:last ? NSFontWeightSemibold : NSFontWeightRegular],
+                                                 NSForegroundColorAttributeName : last ? VLCRedesignAppearance.subduedColor
+                                                                                       : VLCRedesignAppearance.mutedColor
+                                             }]];
+    }
+    NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
+    style.lineBreakMode = NSLineBreakByTruncatingHead;
+    [text addAttribute:NSParagraphStyleAttributeName value:style range:NSMakeRange(0, text.length)];
+    VLCDrawAlignedText(text, self.bounds, self.flipped, NSTextAlignmentLeft);
+}
+
 - (void)drawRect:(NSRect)dirtyRect
 {
+    if (_crumbs.count) {
+        [self drawBreadcrumbs];
+        return;
+    }
     NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
     style.lineBreakMode = NSLineBreakByTruncatingMiddle;
     NSAttributedString *text = [[NSAttributedString alloc]
@@ -122,6 +171,10 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 @interface VLCBrowserArtwork : NSImageView
 @property BOOL intrinsicAsset;
 @property CGFloat progress;
+@property CGFloat cornerRadius;
+// Icons drawn at this size instead of their intrinsic one, when set
+@property CGFloat iconSize;
+@property (nullable) NSColor *fillColor;
 @end
 @implementation VLCBrowserArtwork
 
@@ -133,12 +186,13 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 - (void)drawRect:(NSRect)dirtyRect
 {
     [NSGraphicsContext saveGraphicsState];
-    [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:2 yRadius:2] addClip];
-    if (!self.intrinsicAsset) {
-        [VLCRedesignAppearance.hoverColor setFill];
+    CGFloat radius = self.cornerRadius > 0 ? self.cornerRadius : 2;
+    [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:radius yRadius:radius] addClip];
+    if (!self.intrinsicAsset || self.fillColor) {
+        [(self.fillColor ?: VLCRedesignAppearance.hoverColor) setFill];
         NSRectFill(self.bounds);
     }
-    NSSize size = self.image.size;
+    NSSize size = self.intrinsicAsset && self.iconSize > 0 ? NSMakeSize(self.iconSize, self.iconSize) : self.image.size;
     if (size.width > 0 && size.height > 0) {
         CGFloat scale =
             self.intrinsicAsset ? 1 : MAX(NSWidth(self.bounds) / size.width, NSHeight(self.bounds) / size.height);
@@ -301,6 +355,207 @@ static void VLCBrowserDrawGridIcon(NSRect rect)
 
 @end
 
+/* Full library sidebar entry: icon and label, accent icon when chosen. */
+@interface VLCBrowserSidebarItem : NSButton
+@property (copy) NSString *role;
+@property BOOL chosen;
+@property BOOL iconOnly;
+@property (copy) void (^activate)(void);
+@end
+@implementation VLCBrowserSidebarItem
+
+- (BOOL)isFlipped
+{
+    return YES;
+}
+
+- (BOOL)mouseDownCanMoveWindow
+{
+    return NO;
+}
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        self.bordered = NO;
+        self.title = @"";
+        self.target = self;
+        self.action = @selector(invoke:);
+    }
+    return self;
+}
+
+- (void)invoke:(id)sender
+{
+    if (self.activate)
+        self.activate();
+}
+
+- (void)drawRect:(NSRect)dirtyRect
+{
+    if (self.highlighted) {
+        [VLCRedesignAppearance.hoverColor setFill];
+        [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:4 yRadius:4] fill];
+    }
+    NSImage *icon = nil;
+    if (self.chosen) {
+        icon = VLCBrowserAsset([_role stringByAppendingString:@"-active"]) ?: VLCBrowserAsset(_role);
+        icon = VLCBrowserTinted(icon, VLCRedesignAppearance.accentColor);
+    } else
+        icon = VLCBrowserAsset(_role);
+    CGFloat x = self.iconOnly ? floor((NSWidth(self.bounds) - 24) / 2) : 3;
+    [icon drawInRect:NSMakeRect(x, floor((NSHeight(self.bounds) - 24) / 2), 24, 24)
+            fromRect:NSZeroRect
+           operation:NSCompositingOperationSourceOver
+            fraction:1
+      respectFlipped:YES
+               hints:nil];
+    if (!self.iconOnly) {
+        NSAttributedString *text = [[NSAttributedString alloc]
+            initWithString:self.accessibilityLabel ?: @""
+                attributes:@{
+                    NSFontAttributeName : [VLCRedesignAppearance fontOfSize:14 weight:NSFontWeightRegular],
+                    NSForegroundColorAttributeName : self.chosen ? VLCRedesignAppearance.secondaryColor
+                                                                 : VLCRedesignAppearance.subduedColor
+                }];
+        VLCDrawAlignedText(text, NSMakeRect(38, 0, MAX(0, NSWidth(self.bounds) - 38), NSHeight(self.bounds)), YES,
+                           NSTextAlignmentLeft);
+    }
+    if (self.window.firstResponder == self) {
+        [VLCRedesignAppearance.accentColor setStroke];
+        [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(self.bounds, 1, 1) xRadius:4 yRadius:4] stroke];
+    }
+}
+
+@end
+
+typedef NS_ENUM(NSInteger, VLCBrowserTileStyle) {
+    VLCBrowserTileVideo,  // 16:9 thumbnail
+    VLCBrowserTileSquare, // album artwork with a second line
+    VLCBrowserTileFolder, // plain tile with a large folder icon
+};
+
+static const CGFloat VLCBrowserTileCaptionGap = 20;
+static const CGFloat VLCBrowserTileLineHeight = 20;
+
+/* Large full-library tile, laid out by frame so every style shares one class. */
+@interface VLCBrowserTileView : VLCBrowserSurface
+@property VLCBrowserArtwork *artwork;
+@property VLCRedesignAlignedLabel *title;
+@property VLCRedesignAlignedLabel *subtitle;
+@property VLCBrowserTileStyle style;
+@end
+@implementation VLCBrowserTileView
+
+- (instancetype)init
+{
+    self = [super initWithFrame:NSZeroRect];
+    if (self) {
+        _artwork = [[VLCBrowserArtwork alloc] init];
+        _artwork.cornerRadius = 12;
+        _title = VLCBrowserLabel(16, VLCRedesignAppearance.subduedColor);
+        _subtitle = VLCBrowserLabel(16, VLCRedesignAppearance.mutedColor);
+        [self addSubview:_artwork];
+        [self addSubview:_title];
+        [self addSubview:_subtitle];
+    }
+    return self;
+}
+
+- (void)layout
+{
+    [super layout];
+    CGFloat width = NSWidth(self.bounds);
+    CGFloat artHeight = _style == VLCBrowserTileVideo ? floor(width * 9. / 16.) : width;
+    _artwork.frame = NSMakeRect(0, 0, width, artHeight);
+    _title.frame = NSMakeRect(0, artHeight + VLCBrowserTileCaptionGap, width, VLCBrowserTileLineHeight);
+    _subtitle.frame = NSMakeRect(0, NSMaxY(_title.frame) + 10, width, VLCBrowserTileLineHeight);
+    _subtitle.hidden = _style != VLCBrowserTileSquare;
+}
+
+@end
+
+@interface VLCBrowserTileItem : NSCollectionViewItem
+@property VLCBrowserTileView *tile;
+@property NSURL *representedURL;
+@property NSDictionary *representedEntry;
+@property (copy) void (^activate)(void);
+@end
+@implementation VLCBrowserTileItem
+
+- (void)loadView
+{
+    _tile = [[VLCBrowserTileView alloc] init];
+    self.view = _tile;
+    NSClickGestureRecognizer *gesture = [[NSClickGestureRecognizer alloc] initWithTarget:self action:@selector(open:)];
+    gesture.numberOfClicksRequired = 2;
+    gesture.delaysPrimaryMouseButtonEvents = NO;
+    [self.view addGestureRecognizer:gesture];
+}
+
+- (VLCBrowserArtwork *)artwork
+{
+    return _tile.artwork;
+}
+
+- (void)open:(id)sender
+{
+    if (self.activate)
+        self.activate();
+}
+
+- (void)setSelected:(BOOL)selected
+{
+    [super setSelected:selected];
+    _tile.artwork.wantsLayer = YES;
+    _tile.artwork.layer.borderWidth = selected ? 2 : 0;
+    _tile.artwork.layer.cornerRadius = 12;
+    _tile.artwork.layer.borderColor = VLCRedesignAppearance.accentColor.CGColor;
+}
+
+@end
+
+/* "Continue Watching ›" heading above a Home section; clicking opens the full list. */
+@interface VLCBrowserSectionHeader : VLCBrowserSurface <NSCollectionViewElement>
+@property (copy) NSString *title;
+@property (copy) void (^activate)(void);
+@end
+@implementation VLCBrowserSectionHeader
+
+- (void)drawRect:(NSRect)dirtyRect
+{
+    NSAttributedString *text =
+        [[NSAttributedString alloc] initWithString:_title ?: @""
+                                        attributes:@{
+                                            NSFontAttributeName : [VLCRedesignAppearance fontOfSize:20
+                                                                                             weight:NSFontWeightRegular],
+                                            NSForegroundColorAttributeName : VLCRedesignAppearance.subduedColor
+                                        }];
+    NSRect slot = NSMakeRect(0, 0, text.size.width + 1, NSHeight(self.bounds));
+    VLCDrawAlignedText(text, slot, YES, NSTextAlignmentLeft);
+    if (!self.activate)
+        return;
+    NSBezierPath *chevron = [NSBezierPath bezierPath];
+    CGFloat x = NSMaxX(slot) + 9, y = floor(NSMidY(self.bounds));
+    [chevron moveToPoint:NSMakePoint(x, y - 5)];
+    [chevron lineToPoint:NSMakePoint(x + 5, y)];
+    [chevron lineToPoint:NSMakePoint(x, y + 5)];
+    chevron.lineWidth = 1.5;
+    chevron.lineCapStyle = NSLineCapStyleRound;
+    chevron.lineJoinStyle = NSLineJoinStyleRound;
+    [VLCRedesignAppearance.subduedColor setStroke];
+    [chevron stroke];
+}
+
+- (void)mouseUp:(NSEvent *)event
+{
+    if (self.activate)
+        self.activate();
+}
+
+@end
+
 @interface VLCBrowserViewOption : NSButton
 @property BOOL gridIcon;
 @property BOOL chosen;
@@ -422,6 +677,7 @@ typedef NS_ENUM(NSInteger, VLCBrowserMode) {
     VLCBrowserModePlaylists,
     VLCBrowserModeGroup,
     VLCBrowserModeRecent,
+    VLCBrowserModeHome,
 };
 
 typedef NS_ENUM(NSInteger, VLCBrowserSortMode) {
@@ -494,7 +750,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 }
 
 @interface VLCRedesignCompactBrowser () <NSTableViewDataSource, NSTableViewDelegate, NSCollectionViewDataSource,
-                                         NSCollectionViewDelegate, NSMenuDelegate, NSTextFieldDelegate>
+                                         NSCollectionViewDelegateFlowLayout, NSMenuDelegate, NSTextFieldDelegate>
 @property NSView *rail;
 // Rounded panel behind the browser content, beside the rail
 @property NSView *surface;
@@ -530,6 +786,14 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 @property NSString *loadError;
 @property VLCBrowserPopup *viewPopup;
 @property id popupMonitor;
+@property NSView *sidebarCard;
+// Rounded box holding the search icon and field in the full library
+@property NSView *searchBox;
+@property NSImageView *searchIcon;
+@property NSArray<VLCBrowserSidebarItem *> *sidebarItems;
+// Grid sections as offsets into entries; only Home has more than one
+@property NSArray<NSNumber *> *sectionStarts;
+@property NSArray<NSDictionary *> *sectionInfo;
 @end
 @implementation VLCRedesignCompactBrowser
 
@@ -567,6 +831,11 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 {
     _surface.layer.backgroundColor = VLCRedesignAppearance.overlayColor.CGColor;
     _rail.layer.backgroundColor = VLCRedesignAppearance.panelColor.CGColor;
+    self.layer.backgroundColor = _fullLibrary ? VLCRedesignAppearance.backgroundColor.CGColor : nil;
+    _sidebarCard.layer.backgroundColor = VLCRedesignAppearance.raisedColor.CGColor;
+    _searchBox.layer.backgroundColor = VLCRedesignAppearance.recessedColor.CGColor;
+    if (_fullLibrary)
+        _divider.layer.backgroundColor = VLCRedesignAppearance.dividerColor.CGColor;
     [VLCRedesignAppearance redisplay:self];
 }
 
@@ -590,6 +859,8 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     _pendingArtwork = [NSMutableDictionary dictionary];
     _gridMode = [NSUserDefaults.standardUserDefaults boolForKey:@"VLCRedesignCompactGrid"];
     _rawEntries = _entries = @[];
+    _sectionStarts = @[ @0 ];
+    _sectionInfo = @[ @{} ];
     [self setupRail];
     [self setupNavigationControls];
     [self setupSearchField];
@@ -604,6 +875,75 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 }
 
 #pragma mark - Setup
+
+- (void)setFullLibrary:(BOOL)fullLibrary
+{
+    if (_fullLibrary == fullLibrary)
+        return;
+    _fullLibrary = fullLibrary;
+    if (fullLibrary && !_sidebarCard) {
+        _sidebarCard = [[VLCBrowserSurface alloc] init];
+        _sidebarCard.wantsLayer = YES;
+        _sidebarCard.layer.cornerRadius = 6;
+        [self addSubview:_sidebarCard];
+        NSArray *roles = @[ @"home", @"videos", @"music", @"network", @"playlists", @"recent", @"add" ];
+        NSArray *names = @[
+            _NS("Home"), _NS("Videos"), _NS("Music"), _NS("Network"), _NS("Playlists"), _NS("Recent"),
+            _NS("Add item")
+        ];
+        NSMutableArray *items = [NSMutableArray array];
+        __weak typeof(self) weakSelf = self;
+        for (NSInteger i = 0; i < (NSInteger)roles.count; i++) {
+            VLCBrowserSidebarItem *item = [[VLCBrowserSidebarItem alloc] init];
+            item.role = roles[i];
+            item.toolTip = item.accessibilityLabel = names[i];
+            item.activate = ^{
+                [weakSelf selectSection:(VLCRedesignBrowserSection)i];
+            };
+            [_sidebarCard addSubview:item];
+            [items addObject:item];
+        }
+        _sidebarItems = items;
+        _searchBox = [[VLCBrowserSurface alloc] init];
+        _searchBox.wantsLayer = YES;
+        _searchBox.layer.cornerRadius = 6;
+        [self addSubview:_searchBox positioned:NSWindowBelow relativeTo:_searchField];
+        _searchIcon = [[NSImageView alloc] init];
+        _searchIcon.image = VLCBrowserAsset(@"search");
+        [_searchBox addSubview:_searchIcon];
+        /* The full library opens on Home and prefers the large grid */
+        NSNumber *grid = [NSUserDefaults.standardUserDefaults objectForKey:@"VLCRedesignLibraryGrid"];
+        _gridMode = grid ? grid.boolValue : YES;
+        _divider.image = nil;
+        _divider.wantsLayer = YES;
+        [_history setArray:@[ [[VLCBrowserLocation alloc] initWithSection:VLCRedesignBrowserSectionHome
+                                                                     mode:VLCBrowserModeHome
+                                                                    title:_NS("Home")
+                                                                folderURL:nil
+                                                              libraryItem:nil] ]];
+        _historyIndex = 0;
+    }
+    _sidebarCard.hidden = _searchBox.hidden = !fullLibrary;
+    _searchField.drawsBackground = !fullLibrary;
+    _rail.hidden = _surface.hidden = _expandButton.hidden = _searchButton.hidden = fullLibrary;
+    _searchField.hidden = !fullLibrary && !_searchOpen;
+    _searchField.placeholderString = fullLibrary ? _NS("Search") : _NS("Search media");
+    _counter.alignment = fullLibrary ? NSTextAlignmentRight : NSTextAlignmentLeft;
+    [self updateAppearance];
+    self.needsLayout = YES;
+    [self reload];
+}
+
+- (void)setGridMode:(BOOL)gridMode
+{
+    _gridMode = gridMode;
+    _scroll.documentView = gridMode || self.state.mode == VLCBrowserModeHome ? _grid : _table;
+}
+
+- (void)showSection:(VLCRedesignBrowserSection)section
+{
+    [self selectSection:section];
+}
 
 - (void)setupRail
 {
@@ -759,6 +1099,10 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     _gridLayout.minimumInteritemSpacing = _gridLayout.minimumLineSpacing = 10;
     _grid.collectionViewLayout = _gridLayout;
     [_grid registerClass:VLCBrowserGridItem.class forItemWithIdentifier:@"media"];
+    [_grid registerClass:VLCBrowserTileItem.class forItemWithIdentifier:@"tile"];
+    [_grid registerClass:VLCBrowserSectionHeader.class
+        forSupplementaryViewOfKind:NSCollectionElementKindSectionHeader
+                    withIdentifier:@"section"];
     _grid.activateItem = ^{
         [weakSelf activateSelected:nil];
     };
@@ -901,9 +1245,14 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     NSString *title;
     switch (section) {
     case VLCRedesignBrowserSectionHome:
-        if (self.expandLibrary)
-            self.expandLibrary(nil, section, _gridMode);
-        return;
+        if (!_fullLibrary) {
+            if (self.expandLibrary)
+                self.expandLibrary(nil, section, _gridMode);
+            return;
+        }
+        mode = VLCBrowserModeHome;
+        title = _NS("Home");
+        break;
     case VLCRedesignBrowserSectionOpenMedia:
         [self addMedia:nil];
         return;
@@ -925,7 +1274,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         break;
     case VLCRedesignBrowserSectionRecent:
         mode = VLCBrowserModeRecent;
-        title = _NS("Recent files");
+        title = _fullLibrary ? _NS("Recent") : _NS("Recent files");
         break;
     default:
         return;
@@ -1016,6 +1365,13 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         _railButtons[i].image = VLCBrowserAsset(role);
         _railButtons[i].needsDisplay = YES;
     }
+    for (NSUInteger i = 0; i < _sidebarItems.count; i++) {
+        _sidebarItems[i].chosen = (NSInteger)i == section && section != VLCRedesignBrowserSectionOpenMedia;
+        _sidebarItems[i].needsDisplay = YES;
+    }
+    _address.crumbs = _fullLibrary ? [self breadcrumbsForLocation:state] : nil;
+    _address.needsDisplay = YES;
+    _scroll.documentView = _gridMode || mode == VLCBrowserModeHome ? _grid : _table;
     _counter.stringValue = _NS("Loading…");
     _message.hidden = YES;
     _loadError = nil;
@@ -1035,6 +1391,11 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         snapshot = self.model.listOfGenres.copy;
     else if (mode == VLCBrowserModeRecent)
         snapshot = self.model.listOfRecentMedia.copy;
+    else if (mode == VLCBrowserModeHome)
+        snapshot = @[
+            self.model.listOfRecentMedia.copy ?: @[], self.model.listOfRecentAudioMedia.copy ?: @[],
+            self.model.listOfMonitoredFolders.copy ?: @[]
+        ];
     id<VLCMediaLibraryItemProtocol> group = state.libraryItem;
     int64_t groupID = group.libraryID;
     VLCMediaLibraryParentGroupType groupType = VLCMediaLibraryParentGroupTypeUnknown;
@@ -1079,6 +1440,8 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
                 if (url.isFileURL && !folder.isBanned)
                     [rows addObject:[browser entryForURL:url directory:YES]];
             }
+        } else if (mode == VLCBrowserModeHome) {
+            [rows addObjectsFromArray:[browser homeEntriesFromSnapshot:snapshot generation:generation]];
         } else if (mode == VLCBrowserModeMusic) {
             NSArray *keys = @[ @"songs", @"albums", @"artists", @"genres" ],
                     *names = @[ _NS("Songs"), _NS("Albums"), _NS("Artists"), _NS("Genres") ];
@@ -1119,6 +1482,69 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
                 [strongSelf watchFolder:state.folderURL];
         });
     });
+}
+
+/* Home shows what the library knows: unfinished and recent videos, recently
+ * played audio and the folders the library monitors. */
+- (NSArray<NSDictionary *> *)homeEntriesFromSnapshot:(NSArray *)snapshot generation:(NSUInteger)generation
+{
+    NSMutableArray *rows = [NSMutableArray array];
+    NSUInteger count = 0;
+    for (VLCMediaLibraryMediaItem *media in snapshot[0]) {
+        if (self.generation != generation)
+            return @[];
+        if (media.mediaType != VLC_ML_MEDIA_TYPE_VIDEO)
+            continue;
+        NSMutableDictionary *entry = [[self entryForLibraryItem:media kind:@"media"] mutableCopy];
+        entry[@"section"] = @"continue";
+        [rows addObject:entry];
+        if (++count == 12)
+            break;
+    }
+    count = 0;
+    for (VLCMediaLibraryMediaItem *media in snapshot[1]) {
+        NSMutableDictionary *entry = [[self entryForLibraryItem:media kind:@"media"] mutableCopy];
+        entry[@"section"] = @"listen";
+        entry[@"subtitle"] = media.primaryDetailString ?: @"";
+        [rows addObject:entry];
+        if (++count == 12)
+            break;
+    }
+    for (VLCMediaLibraryEntryPoint *folder in snapshot[2]) {
+        NSURL *url = [NSURL URLWithString:folder.MRL];
+        if (!url.isFileURL || folder.isBanned)
+            continue;
+        NSMutableDictionary *entry = [[self entryForURL:url directory:YES] mutableCopy];
+        entry[@"section"] = @"folders";
+        [rows addObject:entry];
+    }
+    return rows;
+}
+
+- (NSArray<NSString *> *)breadcrumbsForLocation:(VLCBrowserLocation *)state
+{
+    NSArray *sections = @[ _NS("Home"), _NS("Videos"), _NS("Music"), _NS("Network"), _NS("Playlists"), _NS("Recent") ];
+    NSString *root = state.section < (NSInteger)sections.count ? sections[state.section] : state.title;
+    if (state.mode != VLCBrowserModeDirectory)
+        return [state.title isEqualToString:root] || !state.title.length ? @[ root ] : @[ root, state.title ];
+    /* Folders inside a monitored library folder show the path from that folder. */
+    NSString *path = state.folderURL.path.stringByStandardizingPath;
+    NSString *base = nil;
+    for (VLCMediaLibraryEntryPoint *folder in self.model.listOfMonitoredFolders) {
+        NSString *candidate = [NSURL URLWithString:folder.MRL].path.stringByStandardizingPath;
+        if (candidate.length && [path hasPrefix:candidate] && candidate.length > base.length)
+            base = candidate;
+    }
+    NSArray *components = base ? [@[ base.lastPathComponent ]
+                                     arrayByAddingObjectsFromArray:[path substringFromIndex:base.length].pathComponents]
+                               : path.pathComponents;
+    NSMutableArray *crumbs = [NSMutableArray arrayWithObject:root];
+    for (NSString *component in components)
+        if (component.length && ![component isEqualToString:@"/"])
+            [crumbs addObject:component];
+    if (!base && crumbs.count > 4)
+        [crumbs replaceObjectsInRange:NSMakeRange(1, crumbs.count - 4) withObjectsFromArray:@[ @"…" ]];
+    return crumbs;
 }
 
 - (void)watchFolder:(NSURL *)url
@@ -1170,8 +1596,8 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
             [rows addObject:entry];
     VLCBrowserSortMode sortMode = _sortMode;
     VLCBrowserMode mode = self.state.mode;
-    _sortButton.enabled = mode != VLCBrowserModeMusic;
-    if (mode != VLCBrowserModeMusic)
+    _sortButton.enabled = mode != VLCBrowserModeMusic && mode != VLCBrowserModeHome;
+    if (mode != VLCBrowserModeMusic && mode != VLCBrowserModeHome)
         [rows sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
             if ([a[@"kind"] isEqualToString:@"folder"] != [b[@"kind"] isEqualToString:@"folder"])
                 return [a[@"kind"] isEqualToString:@"folder"] ? NSOrderedAscending : NSOrderedDescending;
@@ -1190,7 +1616,10 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
             NSComparisonResult result = [a[@"name"] localizedStandardCompare:b[@"name"]];
             return sortMode == VLCBrowserSortNameDescending ? -result : result;
         }];
-    _counter.stringValue = rows.count == 1 ? _NS("1 item") : [NSString stringWithFormat:_NS("%lu items"), rows.count];
+    NSUInteger total = rows.count;
+    if (mode == VLCBrowserModeHome && !query.length)
+        total = MAX(rows.count, self.model.numberOfVideoMedia + self.model.numberOfAudioMedia);
+    _counter.stringValue = total == 1 ? _NS("1 item") : [NSString stringWithFormat:_NS("%lu items"), total];
     BOOL canAdd = VLCBrowserModeAllowsAdding(mode);
     if (canAdd && !query.length)
         [rows insertObject:@{
@@ -1202,6 +1631,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         }
                    atIndex:0];
     _entries = rows;
+    [self buildSections];
     [_table reloadData];
     [_grid reloadData];
     ((VLCBrowserModeButton *)_viewButton).gridIcon = _gridMode;
@@ -1211,6 +1641,66 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     if (_loadError.length)
         _message.hidden = NO;
     self.needsLayout = YES;
+}
+
+- (void)buildSections
+{
+    if (self.state.mode != VLCBrowserModeHome) {
+        _sectionStarts = @[ @0 ];
+        _sectionInfo = @[ @{} ];
+        return;
+    }
+    NSDictionary *titles = @{
+        @"continue" : _NS("Continue Watching"),
+        @"listen" : _NS("Listen Again"),
+        @"folders" : _NS("Frequently Visited Folders")
+    };
+    NSDictionary *styles = @{
+        @"continue" : @(VLCBrowserTileVideo),
+        @"listen" : @(VLCBrowserTileSquare),
+        @"folders" : @(VLCBrowserTileFolder)
+    };
+    NSDictionary *targets = @{
+        @"continue" : @(VLCRedesignBrowserSectionRecent),
+        @"listen" : @(VLCRedesignBrowserSectionMusic),
+        @"folders" : @(VLCRedesignBrowserSectionVideos)
+    };
+    NSMutableArray *starts = [NSMutableArray array], *info = [NSMutableArray array];
+    NSString *current = nil;
+    for (NSUInteger i = 0; i < _entries.count; i++) {
+        NSString *key = _entries[i][@"section"];
+        if ([key isEqualToString:current])
+            continue;
+        current = key;
+        [starts addObject:@(i)];
+        [info addObject:@{@"title" : titles[key] ?: @"", @"style" : styles[key] ?: @0, @"target" : targets[key] ?: @0}];
+    }
+    _sectionStarts = starts.count ? starts : @[ @0 ];
+    _sectionInfo = info.count ? info : @[ @{} ];
+}
+
+- (NSInteger)entryIndexForPath:(NSIndexPath *)path
+{
+    if (path.section < 0 || path.section >= (NSInteger)_sectionStarts.count)
+        return -1;
+    NSInteger index = _sectionStarts[path.section].integerValue + path.item;
+    return index < (NSInteger)_entries.count ? index : -1;
+}
+
+- (NSInteger)countForSection:(NSInteger)section
+{
+    if (section < 0 || section >= (NSInteger)_sectionStarts.count)
+        return 0;
+    NSInteger end = section + 1 < (NSInteger)_sectionStarts.count ? _sectionStarts[section + 1].integerValue
+                                                                   : (NSInteger)_entries.count;
+    return MAX(0, end - _sectionStarts[section].integerValue);
+}
+
+- (VLCBrowserTileStyle)tileStyleForPath:(NSIndexPath *)path
+{
+    if (self.state.mode == VLCBrowserModeHome)
+        return (VLCBrowserTileStyle)[_sectionInfo[path.section][@"style"] integerValue];
+    return VLCBrowserTileVideo;
 }
 
 - (void)controlTextDidChange:(NSNotification *)notification
@@ -1235,8 +1725,9 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 
 - (NSInteger)selectedIndex
 {
-    return _gridMode ? (_grid.selectionIndexPaths.anyObject ? _grid.selectionIndexPaths.anyObject.item : -1)
-                     : _table.selectedRow;
+    if (_scroll.documentView == _grid)
+        return _grid.selectionIndexPaths.anyObject ? [self entryIndexForPath:_grid.selectionIndexPaths.anyObject] : -1;
+    return _table.selectedRow;
 }
 
 - (void)activateSelected:(id)sender
@@ -1486,7 +1977,9 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
         button.accessibilityLabel = button.title;
         button.activate = ^{
             weakSelf.gridMode = i == 0;
-            [NSUserDefaults.standardUserDefaults setBool:weakSelf.gridMode forKey:@"VLCRedesignCompactGrid"];
+            [NSUserDefaults.standardUserDefaults setBool:weakSelf.gridMode
+                                                  forKey:weakSelf.fullLibrary ? @"VLCRedesignLibraryGrid"
+                                                                              : @"VLCRedesignCompactGrid"];
             [weakSelf closePopup];
             weakSelf.scroll.documentView = weakSelf.gridMode ? weakSelf.grid : weakSelf.table;
             [weakSelf applyFilter];
@@ -1641,16 +2134,75 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     return cell;
 }
 
+- (NSInteger)numberOfSectionsInCollectionView:(NSCollectionView *)collectionView
+{
+    return _sectionStarts.count;
+}
+
 - (NSInteger)collectionView:(NSCollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
 {
-    return _entries.count;
+    return [self countForSection:section];
+}
+
+- (NSView *)collectionView:(NSCollectionView *)collectionView
+    viewForSupplementaryElementOfKind:(NSCollectionViewSupplementaryElementKind)kind
+                          atIndexPath:(NSIndexPath *)indexPath
+{
+    VLCBrowserSectionHeader *header = [collectionView makeSupplementaryViewOfKind:kind
+                                                                   withIdentifier:@"section"
+                                                                     forIndexPath:indexPath];
+    NSDictionary *info = _sectionInfo[indexPath.section];
+    header.title = info[@"title"];
+    __weak typeof(self) weakSelf = self;
+    VLCRedesignBrowserSection target = (VLCRedesignBrowserSection)[info[@"target"] integerValue];
+    header.activate = ^{
+        [weakSelf selectSection:target];
+    };
+    header.needsDisplay = YES;
+    return header;
+}
+
+- (NSSize)collectionView:(NSCollectionView *)collectionView
+                      layout:(NSCollectionViewLayout *)layout
+    referenceSizeForHeaderInSection:(NSInteger)section
+{
+    if (![_sectionInfo[section][@"title"] length])
+        return NSZeroSize;
+    return NSMakeSize(NSWidth(collectionView.bounds), 24);
+}
+
+- (NSEdgeInsets)collectionView:(NSCollectionView *)collectionView
+                        layout:(NSCollectionViewLayout *)layout
+        insetForSectionAtIndex:(NSInteger)section
+{
+    if (!_fullLibrary)
+        return NSEdgeInsetsMake(0, 0, 0, 0);
+    /* Home sections: 20 pt between a heading and its tiles, 40 pt before the next heading */
+    BOOL titled = [_sectionInfo[section][@"title"] length] > 0;
+    return NSEdgeInsetsMake(titled ? 20 : 0, 0, titled ? 40 : 0, 0);
+}
+
+- (NSSize)collectionView:(NSCollectionView *)collectionView
+                    layout:(NSCollectionViewLayout *)layout
+    sizeForItemAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (!_fullLibrary)
+        return _gridLayout.itemSize;
+    VLCBrowserTileStyle style = [self tileStyleForPath:indexPath];
+    if (style == VLCBrowserTileVideo)
+        return _gridLayout.itemSize;
+    CGFloat lines = style == VLCBrowserTileSquare ? 2 : 1;
+    return NSMakeSize(200, 200 + VLCBrowserTileCaptionGap + lines * VLCBrowserTileLineHeight + (lines - 1) * 10);
 }
 
 - (NSCollectionViewItem *)collectionView:(NSCollectionView *)collectionView
      itemForRepresentedObjectAtIndexPath:(NSIndexPath *)indexPath
 {
+    NSInteger index = [self entryIndexForPath:indexPath];
+    NSDictionary *entry = index >= 0 ? _entries[index] : @{};
+    if (_fullLibrary)
+        return [self tileForEntry:entry style:[self tileStyleForPath:indexPath] indexPath:indexPath];
     VLCBrowserGridItem *item = [collectionView makeItemWithIdentifier:@"media" forIndexPath:indexPath];
-    NSDictionary *entry = _entries[indexPath.item];
     NSURL *url = entry[@"url"];
     item.representedURL = url;
     item.representedEntry = entry;
@@ -1673,6 +2225,44 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     return item;
 }
 
+- (NSCollectionViewItem *)tileForEntry:(NSDictionary *)entry
+                                 style:(VLCBrowserTileStyle)style
+                             indexPath:(NSIndexPath *)indexPath
+{
+    VLCBrowserTileItem *item = [_grid makeItemWithIdentifier:@"tile" forIndexPath:indexPath];
+    VLCBrowserTileView *tile = item.tile;
+    item.representedURL = entry[@"url"];
+    item.representedEntry = entry;
+    tile.style = style;
+    tile.title.stringValue = entry[@"name"] ?: @"";
+    tile.title.toolTip = entry[@"name"];
+    tile.subtitle.stringValue = entry[@"subtitle"] ?: @"";
+    /* Finished media keeps a full progress line and a dimmed caption, as in the reference */
+    BOOL watched = [entry[@"played"] integerValue] > 0 && [entry[@"progress"] doubleValue] <= 0;
+    tile.title.textColor = watched ? VLCRedesignAppearance.mutedColor : VLCRedesignAppearance.subduedColor;
+    tile.needsLayout = YES;
+    __weak typeof(self) weakSelf = self;
+    __weak VLCBrowserTileItem *weakItem = item;
+    item.activate = ^{
+        [weakSelf activateEntry:entry];
+    };
+    VLCBrowserArtwork *artwork = tile.artwork;
+    [self configureArtwork:artwork
+                     entry:entry
+                     large:YES
+                   changed:^(NSImage *image) {
+                       if (weakItem.representedEntry == entry) {
+                           weakItem.tile.artwork.image = image;
+                           weakItem.tile.artwork.needsDisplay = YES;
+                       }
+                   }];
+    if (watched)
+        artwork.progress = 1;
+    artwork.iconSize = artwork.intrinsicAsset ? 48 : 0;
+    artwork.fillColor = artwork.intrinsicAsset ? VLCRedesignAppearance.raisedColor : nil;
+    return item;
+}
+
 - (id<NSPasteboardWriting>)pasteboardForEntry:(NSDictionary *)entry
 {
     id<VLCMediaLibraryItemProtocol> libraryItem = entry[@"item"];
@@ -1690,16 +2280,19 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 - (id<NSPasteboardWriting>)collectionView:(NSCollectionView *)collectionView
        pasteboardWriterForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    return [self pasteboardForEntry:_entries[indexPath.item]];
+    NSInteger index = [self entryIndexForPath:indexPath];
+    return index >= 0 ? [self pasteboardForEntry:_entries[index]] : nil;
 }
 
 - (BOOL)collectionView:(NSCollectionView *)collectionView
     canDragItemsAtIndexPaths:(NSSet<NSIndexPath *> *)indexPaths
                    withEvent:(NSEvent *)event
 {
-    for (NSIndexPath *path in indexPaths)
-        if (_entries[path.item][@"url"] || _entries[path.item][@"item"])
+    for (NSIndexPath *path in indexPaths) {
+        NSInteger index = [self entryIndexForPath:path];
+        if (index >= 0 && (_entries[index][@"url"] || _entries[index][@"item"]))
             return YES;
+    }
     return NO;
 }
 
@@ -1767,13 +2360,13 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
 - (void)menuNeedsUpdate:(NSMenu *)menu
 {
     [menu removeAllItems];
-    if (_gridMode) {
+    if (_scroll.documentView == _grid) {
         NSPoint point = [_grid convertPoint:NSApp.currentEvent.locationInWindow fromView:nil];
         NSIndexPath *path = [_grid indexPathForItemAtPoint:point];
         if (path)
             _grid.selectionIndexPaths = [NSSet setWithObject:path];
     }
-    if (!_gridMode && _table.clickedRow >= 0)
+    if (_scroll.documentView == _table && _table.clickedRow >= 0)
         [_table selectRowIndexes:[NSIndexSet indexSetWithIndex:_table.clickedRow] byExtendingSelection:NO];
     NSInteger index = self.selectedIndex;
     if (index < 0 || index >= (NSInteger)_entries.count)
@@ -1842,7 +2435,7 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     CGFloat progress = self.queue.playerController.position;
     if (!url)
         return;
-    if (_gridMode)
+    if (_scroll.documentView == _grid)
         for (VLCBrowserGridItem *item in _grid.visibleItems) {
             if ([item.representedURL isEqual:url]) {
                 item.artwork.progress = progress;
@@ -1861,9 +2454,67 @@ static NSString *VLCBrowserGroupIcon(VLCBrowserMode mode)
     }
 }
 
+/* Figma 970:4028 at 1920 pt: a 217 pt sidebar column holding an inset card,
+ * then a 20 pt padded content area. Narrow windows keep an icon-only sidebar. */
+- (void)layoutFullLibrary
+{
+    CGFloat width = NSWidth(self.bounds), height = NSHeight(self.bounds);
+    BOOL iconOnly = width < 760;
+    CGFloat sidebar = iconOnly ? 62 : 217;
+    _sidebarCard.frame = NSMakeRect(8, 8, sidebar - 16, MAX(0, height - 16));
+    for (NSUInteger i = 0; i < _sidebarItems.count; i++) {
+        VLCBrowserSidebarItem *item = _sidebarItems[i];
+        item.iconOnly = iconOnly;
+        item.frame = iconOnly ? NSMakeRect(7, 12 + i * 46, 32, 32)
+                              : NSMakeRect(16, 12 + i * 46, NSWidth(_sidebarCard.frame) - 32, 32);
+        item.needsDisplay = YES;
+    }
+    CGFloat left = sidebar + 20, right = width - 20, top = 20, row = 32;
+    _backButton.frame = NSMakeRect(left, top + 4, 24, 24);
+    _forwardButton.frame = NSMakeRect(left + 36, top + 4, 24, 24);
+    _moreButton.frame = NSMakeRect(right - 24, top + 4, 24, 24);
+    CGFloat searchWidth = MIN(325, MAX(120, (right - left) * .28));
+    _searchBox.frame = NSMakeRect(NSMinX(_moreButton.frame) - 20 - searchWidth, top, searchWidth, row);
+    _searchIcon.frame = NSMakeRect(8, 4, 24, 24);
+    _searchField.frame = NSMakeRect(NSMinX(_searchBox.frame) + 42, top + 4, MAX(0, searchWidth - 50), 24);
+    _viewButton.frame = NSMakeRect(NSMinX(_searchBox.frame) - 20 - 24, top + 4, 24, 24);
+    _sortButton.frame = NSMakeRect(NSMinX(_viewButton.frame) - 20 - 24, top + 4, 24, 24);
+    BOOL roomForCount = NSMinX(_sortButton.frame) - (left + 72) > 260;
+    _counter.hidden = !roomForCount;
+    _counter.frame = NSMakeRect(NSMinX(_sortButton.frame) - 20 - 110, top + 4, 110, 24);
+    CGFloat crumbsEnd = roomForCount ? NSMinX(_counter.frame) - 10 : NSMinX(_sortButton.frame) - 20;
+    _address.frame = NSMakeRect(left + 72, top + 4, MAX(0, crumbsEnd - left - 72), 24);
+    _divider.frame = NSMakeRect(left, top + row + 17, MAX(0, right - left), 1);
+    CGFloat bodyTop = NSMaxY(_divider.frame);
+    _scroll.frame = NSMakeRect(left, bodyTop, MAX(0, right - left), MAX(0, height - bodyTop));
+    _scroll.contentInsets = NSEdgeInsetsMake(20, 0, 20, 0);
+    [_scroll tile];
+    CGFloat bodyWidth = NSWidth(_scroll.contentView.bounds);
+    /* As many columns as fit at the reference 316 pt tile width, tiles filling the row */
+    NSUInteger columns = MAX(1, (NSUInteger)ceil((bodyWidth + 20) / (316 + 20)));
+    CGFloat itemWidth = floor(MAX(0, (bodyWidth - (columns - 1) * 20) / columns));
+    _gridLayout.minimumInteritemSpacing = 20;
+    _gridLayout.minimumLineSpacing = 40;
+    _gridLayout.itemSize =
+        NSMakeSize(itemWidth, floor(itemWidth * 9. / 16.) + VLCBrowserTileCaptionGap + VLCBrowserTileLineHeight);
+    /* Sections have varying tile sizes, so measure the laid-out content at this width */
+    [_grid setFrameSize:NSMakeSize(bodyWidth, NSHeight(_grid.frame))];
+    [_gridLayout invalidateLayout];
+    [_grid layoutSubtreeIfNeeded];
+    [_grid setFrameSize:NSMakeSize(bodyWidth, MAX(_gridLayout.collectionViewContentSize.height,
+                                                  NSHeight(_scroll.contentView.bounds)))];
+    _table.frame = NSMakeRect(0, 0, bodyWidth, MAX(NSHeight(_scroll.contentView.bounds), _entries.count * 42));
+    _table.tableColumns.firstObject.width = bodyWidth;
+    _message.frame = NSMakeRect(left, bodyTop + 20, MAX(0, right - left), 80);
+}
+
 - (void)layout
 {
     [super layout];
+    if (_fullLibrary) {
+        [self layoutFullLibrary];
+        return;
+    }
     CGFloat width = NSWidth(self.bounds), height = NSHeight(self.bounds), content = MAX(0, width - 90);
     _rail.frame = NSMakeRect(0, 0, 50, height);
     _surface.frame = NSMakeRect(50, 0, MAX(0, width - 50), height);

@@ -122,6 +122,10 @@ libmacosx_plugin_la_SOURCES = \
 	gui/macosx/redesign/VLCRedesignQueuePanel.m \
 	gui/macosx/redesign/VLCRedesignCompactBrowser.h \
 	gui/macosx/redesign/VLCRedesignCompactBrowser.m \
+	gui/macosx/redesign/VLCRedesignIconButton.h \
+	gui/macosx/redesign/VLCRedesignIconButton.m \
+	gui/macosx/redesign/VLCRedesignLibraryView.h \
+	gui/macosx/redesign/VLCRedesignLibraryView.m \
 	gui/macosx/redesign/VLCOnboardingWindowController.h \
 	gui/macosx/redesign/VLCOnboardingWindowController.m \
 	gui/macosx/coreinteraction/VLCHotkeysController.h \
@@ -746,6 +750,7 @@ libmacosx_plugin_la_RES = \
 	gui/macosx/Resources/redesign/VLC-redesign-player-active-settings.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-player-active-sidebar.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-browser-home.svg \
+	gui/macosx/Resources/redesign/VLC-redesign-browser-home-active.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-browser-videos.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-browser-videos-active.svg \
 	gui/macosx/Resources/redesign/VLC-redesign-browser-music.svg \
